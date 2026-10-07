@@ -18,6 +18,8 @@ elif [ "$mode" = "full" ]; then
     grim "$raw_file"
     satty --filename "$raw_file" --output-filename "$file" --copy-command wl-copy --initial-tool pointer
 else
-    notify-send "Снимок экрана" "Неизвестный режим захвата."
+    language="$(python3 @HOME@/.config/niri/scripts/i18n.py)"
+    if [ "$language" = ru ]; then title='Снимок экрана'; message='Неизвестный режим захвата.'; else title='Screenshot'; message='Unknown capture mode.'; fi
+    notify-send "$title" "$message"
     exit 2
 fi

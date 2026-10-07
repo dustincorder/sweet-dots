@@ -2,20 +2,15 @@
 set -euo pipefail
 
 theme="@HOME@/.config/rofi/themes/niri.rasi"
-choice="$(printf '%s\n' \
-    'Снимок области · аннотации' \
-    'Снимок всего экрана · аннотации' \
-    'Запись области · со звуком' \
-    'Запись области · без звука' \
-    'Запись всего экрана · со звуком' \
-    'Запись всего экрана · без звука' \
-    | rofi -dmenu -i -p 'Снимок и запись' -theme "$theme")" || exit 0
+lang="$(python3 @HOME@/.config/niri/scripts/i18n.py)"
+tr() { python3 @HOME@/.config/niri/scripts/i18n.py "$lang" "$1"; }
+choice="$(printf '%s\n' "$(tr capture_region)" "$(tr capture_screen)" "$(tr record_region_audio)" "$(tr record_region_silent)" "$(tr record_screen_audio)" "$(tr record_screen_silent)" | rofi -dmenu -i -p "$(tr capture_prompt)" -theme "$theme")" || exit 0
 
 case "$choice" in
-    'Снимок области · аннотации') exec @HOME@/.config/niri/scripts/capture.sh region ;;
-    'Снимок всего экрана · аннотации') exec @HOME@/.config/niri/scripts/capture.sh full ;;
-    'Запись области · со звуком') exec @HOME@/.config/niri/scripts/record-toggle.sh audio region ;;
-    'Запись области · без звука') exec @HOME@/.config/niri/scripts/record-toggle.sh silent region ;;
-    'Запись всего экрана · со звуком') exec @HOME@/.config/niri/scripts/record-toggle.sh audio full ;;
-    'Запись всего экрана · без звука') exec @HOME@/.config/niri/scripts/record-toggle.sh silent full ;;
+    "$(tr capture_region)") exec @HOME@/.config/niri/scripts/capture.sh region ;;
+    "$(tr capture_screen)") exec @HOME@/.config/niri/scripts/capture.sh full ;;
+    "$(tr record_region_audio)") exec @HOME@/.config/niri/scripts/record-toggle.sh audio region ;;
+    "$(tr record_region_silent)") exec @HOME@/.config/niri/scripts/record-toggle.sh silent region ;;
+    "$(tr record_screen_audio)") exec @HOME@/.config/niri/scripts/record-toggle.sh audio full ;;
+    "$(tr record_screen_silent)") exec @HOME@/.config/niri/scripts/record-toggle.sh silent full ;;
 esac

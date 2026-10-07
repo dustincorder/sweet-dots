@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+set -euo pipefail
+pid_file="${XDG_RUNTIME_DIR:?}/niri-wf-recorder.pid"
+[ -f "$pid_file" ] || exit 0
+pid="$(sed -n '1p' "$pid_file")"
+if ! kill -0 "$pid" 2>/dev/null; then rm -f "$pid_file"; exit 0; fi
+language="$(python3 @HOME@/.config/niri/scripts/i18n.py)"
+if [ "$language" = ru ]; then tooltip='Идёт запись · нажми, чтобы остановить'; else tooltip='Recording · click to stop'; fi
+printf '{"text":"● REC","tooltip":"%s","class":"recording"}\n' "$tooltip"

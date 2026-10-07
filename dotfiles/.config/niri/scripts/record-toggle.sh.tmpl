@@ -7,13 +7,26 @@ videos_dir="$(xdg-user-dir VIDEOS)"
 record_dir="$videos_dir/Recordings"
 log_file="$runtime_dir/niri-wf-recorder.log"
 mkdir -p "$record_dir"
+language="$(python3 @HOME@/.config/niri/scripts/i18n.py)"
 
 if [ -f "$pid_file" ]; then
-    recorder_pid="$(cat "$pid_file")"
+    recorder_pid="$(sed -n '1p' "$pid_file")"
     if kill -0 "$recorder_pid" 2>/dev/null; then
+        file="$(sed -n '2p' "$pid_file")"
         kill -INT "$recorder_pid"
+        for _ in $(seq 1 100); do
+            kill -0 "$recorder_pid" 2>/dev/null || break
+            sleep 0.1
+        done
         rm -f "$pid_file"
-        notify-send "Запись остановлена" "Видео сохранено: ${file/#$HOME/~}"
+        pkill -RTMIN+8 -x waybar 2>/dev/null || true
+        if ffprobe -v error -show_entries format=duration -of csv=p=0 "$file" >/dev/null 2>&1; then
+            if [ "$language" = ru ]; then notify-send "Запись остановлена" "Видео сохранено: ${file/#$HOME/~}"; else notify-send "Recording stopped" "Video saved: ${file/#$HOME/~}"; fi
+        elif [ "$language" = ru ]; then
+            notify-send "Ошибка записи" "Видео не удалось корректно завершить. Подробности: $log_file"
+        else
+            notify-send "Recording failed" "Video could not be finalized. Details: $log_file"
+        fi
         exit 0
     fi
     rm -f "$pid_file"
@@ -41,10 +54,21 @@ fi
 
 recorder_pid=$!
 printf '%s\n' "$recorder_pid" > "$pid_file"
+printf '%s\n' "$file" >> "$pid_file"
+pkill -RTMIN+8 -x waybar 2>/dev/null || true
 sleep 0.5
 if kill -0 "$recorder_pid" 2>/dev/null; then
-    notify-send "Запись началась" "Нажми ту же кнопку ещё раз, чтобы остановить."
+    if [ "$language" = ru ]; then
+        notify-send "Запись началась" "Нажми ту же кнопку ещё раз, чтобы остановить."
+    else
+        notify-send "Recording started" "Press the same shortcut again to stop."
+    fi
 else
     rm -f "$pid_file"
-    notify-send "Не удалось начать запись" "Подробности: $log_file"
+    pkill -RTMIN+8 -x waybar 2>/dev/null || true
+    if [ "$language" = ru ]; then
+        notify-send "Не удалось начать запись" "Подробности: $log_file"
+    else
+        notify-send "Could not start recording" "Details: $log_file"
+    fi
 fi

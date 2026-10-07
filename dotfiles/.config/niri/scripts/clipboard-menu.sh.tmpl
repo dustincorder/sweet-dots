@@ -2,6 +2,38 @@
 set -euo pipefail
 
 theme="@HOME@/.config/rofi/themes/niri.rasi"
-selection="$(cliphist list | rofi -dmenu -i -p 'Буфер обмена' -theme "$theme")" || exit 0
+language="$(python3 @HOME@/.config/niri/scripts/i18n.py)"
+if [ "$language" = ru ]; then prompt='Буфер обмена'; else prompt='Clipboard'; fi
+cache="${XDG_CACHE_HOME:-$HOME/.cache}/sweet-dots/clipboard-previews"
+mkdir -p "$cache"
+rows="$(mktemp)"
+trap 'rm -f "$rows"' EXIT
+while IFS= read -r entry; do
+    [ -n "$entry" ] || continue
+    id="${entry%%$'\t'*}"
+    preview="${entry#*$'\t'}"
+    if [[ "$preview" == '[[ binary data '* ]]; then
+        image="$cache/$id.png"
+        if [ ! -f "$image" ]; then
+            printf '%s' "$entry" | cliphist decode | magick - -thumbnail '128x80>' "$image" 2>/dev/null || rm -f "$image"
+        fi
+        label="󰋩  ${preview#\[\[ binary data }"
+        label="${label%]]}"
+        printf '%s\t%s\0icon\x1f%s\n' "$id" "$label" "$image" >> "$rows"
+    else
+        printf '%s\0\n' "$entry" >> "$rows"
+    fi
+done < <(cliphist list)
+if [ ! -s "$rows" ]; then
+    if [ "$language" = ru ]; then notify-send 'Буфер обмена' 'История буфера обмена пуста'; else notify-send 'Clipboard' 'Clipboard history is empty'; fi
+    exit 0
+fi
+selection="$(rofi -dmenu -i -show-icons -p "$prompt" -theme "$theme" < "$rows")" || exit 0
 [ -n "$selection" ] || exit 0
-printf '%s' "$selection" | cliphist decode | wl-copy
+id="${selection%%$'\t'*}"
+entry="$(cliphist list | awk -F '\t' -v id="$id" '$1 == id { print; exit }')"
+if [[ "$entry" == *$'\t[[ binary data '* ]]; then
+    printf '%s' "$entry" | cliphist decode | wl-copy --type image/png
+else
+    printf '%s' "$entry" | cliphist decode | wl-copy
+fi
