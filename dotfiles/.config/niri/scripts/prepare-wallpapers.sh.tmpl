@@ -39,10 +39,6 @@ make_wallpaper "$cg_root/ev/ev6101_哲雄_蓉司と相合傘l.jpg" \
 make_wallpaper "$cg_root/ev/ev4201_善弥_トイレで痛みに震えるL.jpg" \
     "$wallpaper_dir/zenya-bruised.jpg" 0.80
 
-magick "$cg_root/st/st蓉司_制服_normal.png" \
-    -trim +repage -resize '390x500>' \
-    -background '#101820' -gravity center -extent 420x500 \
-    "$portrait_dir/fastfetch-portrait.png"
 python3 "$(dirname "$0")/prepare-fastfetch-logo.py" "$wallpaper_dir/yoji-train.jpg"
 
 printf 'Created seven wallpapers in %s\n' "$wallpaper_dir"
