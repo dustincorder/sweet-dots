@@ -40,15 +40,19 @@ the settings GUI. Read this file first; do not re-explore the tree.
   portrait logo, power menu. `hyprlock.conf.tmpl` / `hypridle.conf.tmpl` —
   lock + 30-min idle lock, no suspend.
 - `dotfiles/.zshrc`, `dotfiles/.oh-my-zsh/custom/themes/` — prompt.
-- `wallpapers/` — tracked files FORBIDDEN here (only `README.md`).
-  User images live under `$HOME/.local/share/niri/wallpapers/`.
+- `wallpapers/` — bundled Sweet Pool set (`*.jpg`) + `assets/fastfetch-logos/`
+  character sprites for the fastfetch portrait. Generated thumbnails
+  (`*-thumb.png`), `current.jpg` symlinks and portraits stay on the machine
+  under `$HOME/.local/share/niri/wallpapers/`.
 
 ## Rules
 
 1. **No local details in the repo.** No usernames, `$HOME` expansions,
    hostnames, absolute source-media paths, resolutions, tokens, or remote
-   usernames. Use `$HOME`, `@HOME@`, `~` placeholders. Personal files
-   (wallpapers, avatars, generated portraits, backups) stay outside git.
+   usernames. Use `$HOME`, `@HOME@`, `~` placeholders. Generated artifacts
+   (thumbnails, portraits, backups, `current.jpg` symlinks) stay outside git.
+   Bundled `wallpapers/*.jpg` + `assets/fastfetch-logos/*.png` are the
+   explicit exception (user-approved).
 2. **Two template layers — don't mix them.** `@VAR@` = expanded by
    `settings.py` at render time. `{{colors...}}` = expanded by matugen at
    wallpaper time. Details: `docs/TEMPLATING.md`.
@@ -88,9 +92,11 @@ before improvising:
 ## Panel order + shortcuts
 
 Default panel: configured workspaces left; hide only Niri's transient
-`N+1` creation slot based on the selected 2/3/4 count. Clock centered,
+`N+1` creation slot based on the selected 2/3/4 count. Clock centered
+with the recording indicator next to it (click → notification center),
 then tray + keyboard layout, network + Bluetooth
-+ volume, recording status + power on the right. Clipboard is keyboard-only
++ volume, then power on the right. Network/Bluetooth/volume clicks open
+the SwayNC panel; right-clicks open the native editors. Clipboard is keyboard-only
 (`Mod+V`, no panel button); settings open on `Mod+Shift+S`.
 
 ## First steps for a task

@@ -1,5 +1,7 @@
 # Use the native Wayland clipboard and avoid an X11 DISPLAY fallback.
 linux_display_server wayland
+# No client-side titlebar: niri draws server-side borders (see prefer-no-csd rule).
+hide_window_decorations yes
 
 font_family JetBrainsMono Nerd Font Mono
 font_size 10

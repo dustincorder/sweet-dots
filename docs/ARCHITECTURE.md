@@ -53,8 +53,9 @@ wallpapers `Mod+Shift+W`, hotkey overlay `Mod+Shift+Slash`.
 
 Left: configured workspaces; the transient `N+1` creation slot is hidden
 dynamically from the selected count (2/3/4). Center:
-clock (click → notification center). Right: tray + keyboard layout, then
-network + bluetooth + volume, then recording status + power, with visual
+clock (click → notification center) with the blinking recording indicator
+next to it. Right: tray + keyboard layout, then
+network + bluetooth + volume, then power, with visual
 spacing between those clusters. NetworkManager and Bluetooth applets are
 hidden from the tray because dedicated network/Bluetooth widgets replace
 them; the keyboard layout is compact text, not a button.

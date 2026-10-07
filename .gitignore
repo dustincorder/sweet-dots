@@ -1,10 +1,8 @@
-# Local wallpapers and previews are user-provided; do not commit them by accident.
+# Generated thumbnails and editor leftovers stay out.
 .DS_Store
 Thumbs.db
 *.swp
 *.bak
-wallpapers/*
-!wallpapers/README.md
 screenshots/*.png
 # Python bytecode from local template checks; never commit.
 __pycache__/

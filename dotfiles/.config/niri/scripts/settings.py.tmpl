@@ -21,9 +21,9 @@ TARGETS = {
     'wlogout-layout.tmpl': HOME / '.config/wlogout/layout',
 }
 DEFAULT_GROUPS = {
-    'left': ['niri/workspaces'], 'center': ['custom/clock-center'],
+    'left': ['niri/workspaces'], 'center': ['custom/clock-center', 'custom/recording'],
     'right': ['tray', 'custom/language', 'network', 'custom/bluetooth', 'pulseaudio',
-              'custom/recording', 'custom/power'],
+              'custom/power'],
 }
 WIDGETS = {
     'niri/workspaces': ('Рабочие места', 'Workspaces'),
@@ -88,7 +88,13 @@ def read_settings():
                  'network', 'custom/bluetooth', 'pulseaudio', 'custom/recording', 'custom/power'],
         'center': [], 'right': [],
     }
-    if normalized_groups in (old_default, temporary_single_group):
+    previous_default = {
+        'left': ['niri/workspaces'],
+        'center': ['custom/clock-center'],
+        'right': ['tray', 'custom/language', 'network', 'custom/bluetooth', 'pulseaudio',
+                  'custom/recording', 'custom/power'],
+    }
+    if normalized_groups in (old_default, temporary_single_group, previous_default):
         normalized_groups = {side: list(items) for side, items in DEFAULT_GROUPS.items()}
     return {
         'language': raw.get('language') if raw.get('language') in {'ru', 'en'} else 'ru',
@@ -183,11 +189,12 @@ def patch_widget_scale(prefs):
     text = re.sub(r'(#workspaces button\s*\{[^}]*?min-width:\s*)\d+px', rf'\g<1>{button_size}px', text, count=1, flags=re.S)
     power_size = {'small': 15, 'medium': 17, 'large': 20}[prefs['widget_size']]
     text = re.sub(r'(#custom-power\s*\{[^}]*?font-size:\s*)\d+px', rf'\g<1>{power_size}px', text, count=1, flags=re.S)
-    text = re.sub(r'\n?/\* sweet-dots-workspace-limit \*/\n#workspaces button#niri-workspace-\d+ \{[^}]+\}\n?', '\n', text)
+    text = re.sub(r'\n?/\* sweet-dots-workspace-limit \*/.*?(?=\n|$)', '', text)
+    text = re.sub(r'\n?#workspaces button#niri-workspace-(?:3|4|5)\s*\{[^}]*\}', '', text)
     transient = int(prefs['workspaces']) + 1
     text += (f'\n/* sweet-dots-workspace-limit */\n'
              f'#workspaces button#niri-workspace-{transient} '
-             '{ min-width: 0; padding: 0; margin: 0; opacity: 0; }\n')
+             '{ min-width: 0; padding: 0; margin: 0; border: none; font-size: 0; opacity: 0; }\n')
     css.write_text(text)
 
 
@@ -255,24 +262,49 @@ def gui():
     import tkinter as tk
     from tkinter import messagebox, ttk
     prefs = read_settings()
-    lang = tk.StringVar(value=prefs['language'])
-    variables = {'clock_date': tk.BooleanVar(value=prefs['clock_date'])}
     root = tk.Tk()
+    lang = tk.StringVar(root, value=prefs['language'])
+    variables = {'clock_date': tk.BooleanVar(root, value=prefs['clock_date'])}
     root.geometry('850x590')
     root.minsize(760, 520)
-    root.configure(bg='#101820')
+    palette = {'bg': '#101820', 'surface': '#172832', 'text': '#e4edf2', 'accent': '#254653', 'muted': '#aab8bf'}
+    try:
+        css = (HOME / '.config/niri/swaync/style.css').read_text()
+        def css_color(selector, prop, fallback):
+            match = re.search(re.escape(selector) + r'.*?' + prop + r':\s*(#[0-9a-fA-F]{6})', css, re.S)
+            return match.group(1) if match else fallback
+        palette.update(
+            bg=css_color('.control-center', 'background', palette['bg']),
+            surface=css_color('.widget-buttons-grid', 'background', palette['surface']),
+            text=css_color('.control-center', 'color', palette['text']),
+            accent=css_color('.widget-title > button', 'color', palette['accent']),
+            muted=css_color('.body', 'color', palette['muted']),
+        )
+    except OSError:
+        pass
+    root.configure(bg=palette['bg'])
     style = ttk.Style(root)
     style.theme_use('clam')
-    style.configure('.', background='#101820', foreground='#e4edf2', font=('Sans', 10))
-    style.configure('TFrame', background='#101820')
-    style.configure('TLabel', background='#101820', foreground='#e4edf2')
-    style.configure('TRadiobutton', background='#101820', foreground='#e4edf2')
-    style.configure('TCheckbutton', background='#101820', foreground='#e4edf2')
-    style.configure('TNotebook', background='#101820', borderwidth=0)
-    style.configure('TNotebook.Tab', background='#1a2931', foreground='#dce8ed', padding=(12, 8))
-    style.configure('TButton', background='#223943', foreground='#e4edf2', padding=(9, 5))
-    style.map('TButton', background=[('active', '#315b68')])
-    style.configure('TCombobox', fieldbackground='#172832', background='#172832', foreground='#e4edf2')
+    style.configure('.', background=palette['bg'], foreground=palette['text'], font=('Sans', 10))
+    style.configure('TFrame', background=palette['bg'])
+    style.configure('TLabel', background=palette['bg'], foreground=palette['text'])
+    style.configure('TRadiobutton', background=palette['bg'], foreground=palette['text'])
+    style.configure('TCheckbutton', background=palette['bg'], foreground=palette['text'])
+    style.configure('TNotebook', background=palette['bg'], borderwidth=0)
+    style.configure('TNotebook.Tab', background=palette['surface'], foreground=palette['text'], padding=(14, 8))
+    style.map('TNotebook.Tab', background=[('selected', palette['accent'])],
+              foreground=[('selected', palette['bg'])])
+    style.configure('TButton', background=palette['surface'], foreground=palette['text'], padding=(9, 5))
+    style.map('TButton', background=[('active', palette['accent'])],
+              foreground=[('active', palette['bg'])])
+    style.configure('Accent.TButton', background=palette['accent'], foreground=palette['bg'],
+                    padding=(16, 8), font=('Sans', 11, 'bold'))
+    style.map('Accent.TButton', background=[('active', palette['text'])])
+    style.configure('Card.TFrame', background=palette['surface'])
+    style.configure('Card.TLabel', background=palette['surface'], foreground=palette['text'])
+    style.configure('Card.TRadiobutton', background=palette['surface'], foreground=palette['text'])
+    style.configure('Card.TCheckbutton', background=palette['surface'], foreground=palette['text'])
+    style.configure('TCombobox', fieldbackground=palette['surface'], background=palette['surface'], foreground=palette['text'])
     content = ttk.Frame(root, padding=18)
     content.pack(fill='both', expand=True)
     heading = ttk.Label(content, font=('Sans', 16, 'bold'))
@@ -285,51 +317,54 @@ def gui():
     notebook.add(general, text='')
     notebook.add(dock, text='')
     notebook.add(shortcuts_tab, text='')
+    card = ttk.Frame(general, style='Card.TFrame', padding=16)
+    card.pack(fill='x', pady=(2, 0))
+    card.columnconfigure(1, weight=1)
 
-    language_label = ttk.Label(general)
+    language_label = ttk.Label(card, style='Card.TLabel')
     language_label.grid(row=0, column=0, sticky='w', pady=7)
     for col, value in enumerate(('ru', 'en'), 1):
-        ttk.Radiobutton(general, variable=lang, value=value, text=value.upper()).grid(row=0, column=col, sticky='w', padx=8)
-    workspace_label = ttk.Label(general)
+        ttk.Radiobutton(card, style='Card.TRadiobutton', variable=lang, value=value, text=value.upper()).grid(row=0, column=col, sticky='w', padx=8)
+    workspace_label = ttk.Label(card, style='Card.TLabel')
     workspace_label.grid(row=1, column=0, sticky='w', pady=7)
     workspace_var = tk.StringVar(value=str(prefs['workspaces']))
-    workspace_combo = ttk.Combobox(general, textvariable=workspace_var, values=('2', '3', '4'), state='readonly', width=9)
+    workspace_combo = ttk.Combobox(card, textvariable=workspace_var, values=('2', '3', '4'), state='readonly', width=9)
     workspace_combo.grid(row=1, column=1, sticky='w')
-    position_label = ttk.Label(general)
+    position_label = ttk.Label(card, style='Card.TLabel')
     position_label.grid(row=2, column=0, sticky='w', pady=7)
     selected_values = {'position': prefs['position'], 'panel_size': prefs['panel_size'], 'widget_size': prefs['widget_size']}
     position_display = tk.StringVar(value=prefs['position'])
-    position_combo = ttk.Combobox(general, textvariable=position_display, values=('top', 'bottom'), state='readonly', width=14)
+    position_combo = ttk.Combobox(card, textvariable=position_display, values=('top', 'bottom'), state='readonly', width=14)
     position_combo.grid(row=2, column=1, sticky='w')
-    height_label = ttk.Label(general)
+    height_label = ttk.Label(card, style='Card.TLabel')
     height_label.grid(row=3, column=0, sticky='w', pady=7)
     panel_display = tk.StringVar(value=prefs['panel_size'])
-    height_combo = ttk.Combobox(general, textvariable=panel_display, values=('small', 'medium', 'large'), state='readonly', width=14)
+    height_combo = ttk.Combobox(card, textvariable=panel_display, values=('small', 'medium', 'large'), state='readonly', width=14)
     height_combo.grid(row=3, column=1, sticky='w')
-    widget_size_label = ttk.Label(general)
+    widget_size_label = ttk.Label(card, style='Card.TLabel')
     widget_size_label.grid(row=4, column=0, sticky='w', pady=7)
     widget_display = tk.StringVar(value=prefs['widget_size'])
-    widget_size_combo = ttk.Combobox(general, textvariable=widget_display, values=('small', 'medium', 'large'), state='readonly', width=14)
+    widget_size_combo = ttk.Combobox(card, textvariable=widget_display, values=('small', 'medium', 'large'), state='readonly', width=14)
     widget_size_combo.grid(row=4, column=1, sticky='w')
     def sync_choice(choice, variable, reverse):
         selected_values[choice] = reverse.get(variable.get(), selected_values[choice])
     height_combo.bind('<<ComboboxSelected>>', lambda *_: sync_choice('panel_size', panel_display, {'Компактный': 'small', 'Обычный': 'medium', 'Крупный': 'large', 'Compact': 'small', 'Standard': 'medium', 'Large': 'large'}))
     widget_size_combo.bind('<<ComboboxSelected>>', lambda *_: sync_choice('widget_size', widget_display, {'Компактный': 'small', 'Обычный': 'medium', 'Крупный': 'large', 'Compact': 'small', 'Standard': 'medium', 'Large': 'large'}))
     position_combo.bind('<<ComboboxSelected>>', lambda *_: sync_choice('position', position_display, {'Сверху': 'top', 'Снизу': 'bottom', 'Top': 'top', 'Bottom': 'bottom'}))
-    date_check = ttk.Checkbutton(general, variable=variables['clock_date'])
+    date_check = ttk.Checkbutton(card, style='Card.TCheckbutton', variable=variables['clock_date'])
     date_check.grid(row=5, column=0, columnspan=2, sticky='w', pady=7)
-    hint = ttk.Label(general)
+    hint = ttk.Label(card, style='Card.TLabel')
     hint.grid(row=6, column=0, columnspan=3, sticky='w', pady=(14, 0))
 
     active_lists = {}
-    available = tk.Listbox(dock, height=14, exportselection=False, bg='#101820', fg='#e4edf2', selectbackground='#254653', borderwidth=0, highlightthickness=1, highlightbackground='#32444c')
+    available = tk.Listbox(dock, height=14, exportselection=False, bg=palette['surface'], fg=palette['text'], selectbackground=palette['accent'], borderwidth=0, highlightthickness=1, highlightbackground=palette['accent'])
     ttk.Label(dock, text='').grid(row=0, column=0)
     available.grid(row=1, column=0, rowspan=3, sticky='nsew', padx=(0, 8))
     groups = {}
     for col, side in enumerate(('left', 'center', 'right'), 1):
-        box_frame = ttk.Frame(dock)
+        box_frame = ttk.Frame(dock, style='Card.TFrame', padding=6)
         box_frame.grid(row=1, column=col, sticky='nsew', padx=5)
-        groups[side] = tk.Listbox(box_frame, height=14, exportselection=False, bg='#101820', fg='#e4edf2', selectbackground='#254653', borderwidth=0, highlightthickness=1, highlightbackground='#32444c')
+        groups[side] = tk.Listbox(box_frame, height=14, exportselection=False, bg=palette['surface'], fg=palette['text'], selectbackground=palette['accent'], borderwidth=0, highlightthickness=1, highlightbackground=palette['accent'])
         groups[side].pack(fill='both', expand=True)
         active_lists[side] = groups[side]
     destination = tk.StringVar(value='right')
@@ -403,7 +438,7 @@ def gui():
     for side in groups:
         for widget in prefs['groups'].get(side, []):
             groups[side].insert('end', widget)
-    shortcut_list = tk.Listbox(shortcuts_tab, height=12, exportselection=False, bg='#101820', fg='#e4edf2', selectbackground='#254653', borderwidth=0, highlightthickness=1, highlightbackground='#32444c')
+    shortcut_list = tk.Listbox(shortcuts_tab, height=12, exportselection=False, bg=palette['surface'], fg=palette['text'], selectbackground=palette['accent'], selectforeground=palette['bg'], borderwidth=0, highlightthickness=1, highlightbackground=palette['accent'])
     shortcut_list.pack(fill='both', expand=True, pady=(8, 10))
     def refresh_shortcuts():
         shortcut_list.delete(0, 'end')
@@ -413,10 +448,10 @@ def gui():
         source = item or {'key': '', 'label': '', 'command': '', 'icon': '󰌌'}
         dialog = tk.Toplevel(root)
         dialog.title(tr('edit' if item else 'new', lang.get()))
-        dialog.configure(bg='#101820')
+        dialog.configure(bg=palette['surface'])
         fields = {}
         for row, key in enumerate(('label', 'key', 'command', 'icon')):
-            ttk.Label(dialog, text=tr(key, lang.get())).grid(row=row, column=0, sticky='w', padx=12, pady=7)
+            ttk.Label(dialog, text=tr(key, lang.get()), style='Card.TLabel').grid(row=row, column=0, sticky='w', padx=12, pady=7)
             fields[key] = tk.StringVar(value=source.get(key, ''))
             ttk.Entry(dialog, textvariable=fields[key], width=42).grid(row=row, column=1, padx=12, pady=7)
         def accept():
@@ -433,7 +468,7 @@ def gui():
             refresh_shortcuts()
             refresh_widgets()
             dialog.destroy()
-        ttk.Button(dialog, text=tr('apply', lang.get()), command=accept).grid(row=4, column=1, sticky='e', padx=12, pady=12)
+        ttk.Button(dialog, text=tr('apply', lang.get()), style='Accent.TButton', command=accept).grid(row=4, column=1, sticky='e', padx=12, pady=12)
     shortcut_buttons = ttk.Frame(shortcuts_tab)
     shortcut_buttons.pack(anchor='e')
     new_button = ttk.Button(shortcut_buttons, command=lambda: shortcut_editor())
@@ -469,7 +504,7 @@ def gui():
     delete_button.configure(command=delete_selected)
     footer = ttk.Frame(content)
     footer.pack(fill='x', pady=(12, 0))
-    apply_button = ttk.Button(footer, command=lambda: None)
+    apply_button = ttk.Button(footer, style='Accent.TButton', command=lambda: None)
     apply_button.pack(side='right')
 
     def refresh_labels(*_):

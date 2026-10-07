@@ -11,7 +11,7 @@ window#waybar > box {
   border: 1px solid #34434a;
   border-radius: 16px;
   background-clip: padding-box;
-  padding: 0 8px;
+  padding: 0 5px;
 }
 #workspaces, #custom-clock-center, #tray, #network, #custom-bluetooth,
 #custom-language, #pulseaudio, #custom-recording, #custom-power, #cpu, #memory,
@@ -22,19 +22,25 @@ window#waybar > box {
   background: #17252c;
   border-radius: 11px;
   padding: 2px;
+  margin-right: 0;
+  min-width: 0;
 }
 #workspaces button {
   background: transparent;
   border-radius: 9px;
   color: #9aafb7;
   min-width: 31px;
-  padding: 0 8px;
+  margin: 0 1px;
+  padding: 0 5px;
   transition: background 180ms ease, color 180ms ease;
 }
 #workspaces button:hover { background: #24363e; color: #dce8ed; }
 #workspaces button.active { background: #254653; color: #d8edf2; }
 #workspaces button.empty { color: #71868e; }
 #custom-clock-center { color: #d8e4e9; padding: 0 10px; }
+#workspaces button#niri-workspace-3,
+#workspaces button#niri-workspace-4,
+#workspaces button#niri-workspace-5 { min-width: 0; padding: 0; margin: 0; border: none; font-size: 0; opacity: 0; }
 #tray { padding: 0 5px; }
 #network, #custom-bluetooth, #custom-language, #pulseaudio,
 #custom-recording, #custom-power, #cpu, #memory, #custom-media {
@@ -50,13 +56,21 @@ window#waybar > box {
 #custom-language { min-width: 0; padding: 0 4px; }
 #network, #custom-bluetooth, #pulseaudio { font-size: 16px; }
 #custom-power { font-size: 17px; }
-#custom-recording { color: #ff6b6b; font-weight: bold; }
+#custom-recording {
+  background: #402428;
+  border-radius: 9px;
+  color: #ff6b6b;
+  font-weight: bold;
+  animation: rec-blink 1.2s steps(2, start) infinite;
+}
+@keyframes rec-blink { to { background: transparent; } }
 .modules-left, .modules-center, .modules-right { padding: 0 6px; }
 .modules-right > widget:nth-child(2), .modules-right > widget:nth-child(5),
 .modules-right > widget:last-child { margin-left: 9px; }
 #network:hover, #custom-bluetooth:hover, #custom-language:hover,
-#pulseaudio:hover, #custom-power:hover {
+#pulseaudio:hover, #custom-power:hover, #custom-recording:hover {
   background: #24363e;
+  border-radius: 9px;
   color: #e4edf1;
 }
 tooltip {

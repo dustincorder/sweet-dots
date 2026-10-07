@@ -46,7 +46,12 @@ if [ "$mode" != "silent" ]; then
 fi
 
 if [ "$scope" = "region" ]; then
-    geometry="$(slurp)" || exit 0
+    # Right-click / Esc in slurp cancels. A plain left-click without a drag
+    # means "just record the full screen" instead of cancelling.
+    if ! geometry="$(slurp)"; then exit 0; fi
+    if [ -z "$geometry" ]; then scope="full"; fi
+fi
+if [ "$scope" = "region" ]; then
     wf-recorder -r 30 -f "$file" $audio_arg -g "$geometry" >> "$log_file" 2>&1 &
 else
     wf-recorder -r 30 -f "$file" $audio_arg >> "$log_file" 2>&1 &

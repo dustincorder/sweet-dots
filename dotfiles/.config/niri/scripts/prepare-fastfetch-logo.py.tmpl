@@ -34,8 +34,8 @@ def main():
         return
     png = OUTPUT / 'fastfetch-portrait.png'
     subprocess.run([
-        'magick', str(source), '-trim', '+repage', '-resize', '550x640>',
-        '-background', '#101820', '-gravity', 'center', '-extent', '550x640',
+        'magick', str(source), '-trim', '+repage', '-resize', '360x640^',
+        '-background', '#101820', '-gravity', 'center', '-extent', '360x640',
         str(png),
     ], check=True)
 
