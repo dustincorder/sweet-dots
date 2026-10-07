@@ -73,7 +73,7 @@ the file on disk is live.
 The installer must skip settings-rendered targets during its raw copy
 pass. Otherwise Niri can observe unexpanded `@WORKSPACE_*@` placeholders
 before `settings.py` replaces them. Waybar is reloaded by signal and
-started directly when absent; do not assume a `niri-waybar.service` unit.
+recovered by `panel.py` when absent; do not assume a `niri-waybar.service` unit.
 
 ## Fastfetch shows half a logo / pixel soup
 
@@ -94,3 +94,36 @@ Read only the first line of `niri-wf-recorder.pid` as the PID (the second
 line is the target path), wait for exit, then verify with `ffprobe` before
 showing a success notification. The Waybar recording indicator uses the
 same PID file and is clickable to stop safely.
+
+## Duplicate Ethernet/Bluetooth tray icons
+
+`ignored-items` was never a Waybar tray option. Current upstream `master`
+documents filters that released Waybar 0.15 does not implement. The portable
+fix excludes NM/Blueman applets via Niri-specific autostart overrides and
+stops only the current user's presentation processes in `panel.py` when
+`NIRI_SOCKET` is set. NetworkManager and BlueZ stay running. Install the
+changed files and call `panel.py --reload` in Niri; inspect other custom
+autostart entries if an applet is explicitly restarted by a local service.
+
+## Missing Waybar after changing wallpaper
+
+Recover using `python3 ~/.config/niri/scripts/panel.py --reload`. Look at
+`~/.local/state/sweet-dots/waybar.log` (or `$XDG_STATE_HOME/sweet-dots/waybar.log`).
+The supervisor stops after three rapid failures rather than looping forever.
+`wallpaper.py` rolls back a partial Matugen failure before any reload;
+CSS scale changes use atomic file replacement. The exact old crash still
+requires the affected user's log and package versions.
+
+## GTK controls fail to import
+
+Install `python-gobject`, `gtk3`, `gtk-layer-shell` on Arch. Screenshot
+selection also requires `python-cairo`; editing requires `swappy`.
+Settings can be smoke-tested under Xvfb; layer-shell controls and screen
+capture require the actual Niri session.
+
+## Blue rectangle behind Fastfetch in a warm theme
+
+Re-run `prepare-fastfetch-logo.py` for the current wallpaper. Portraits
+now preserve transparency and use bundled sprites if `SWEET_POOL_CG_DIR`
+is unset. The old generator filled the canvas with `#101820`, independently
+of Matugen. Terminals continue to supply the generated theme background.

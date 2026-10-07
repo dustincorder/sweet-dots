@@ -1,5 +1,6 @@
 * {
   border: none;
+  box-shadow: none;
   border-radius: 0;
   font-family: "SF Pro Display", "Inter", "Noto Sans", "Symbols Nerd Font";
   font-size: 13px;
@@ -25,7 +26,7 @@ window#waybar > box {
   margin-right: 0;
   min-width: 0;
 }
-#workspaces button {
+#custom-workspace-1, #custom-workspace-2, #custom-workspace-3, #custom-workspace-4 {
   background: transparent;
   border-radius: 9px;
   color: #9aafb7;
@@ -34,13 +35,10 @@ window#waybar > box {
   padding: 0 5px;
   transition: background 180ms ease, color 180ms ease;
 }
-#workspaces button:hover { background: #24363e; color: #dce8ed; }
-#workspaces button.active { background: #254653; color: #d8edf2; }
-#workspaces button.empty { color: #71868e; }
+#custom-workspace-1:hover, #custom-workspace-2:hover, #custom-workspace-3:hover, #custom-workspace-4:hover { background: #24363e; color: #dce8ed; }
+#custom-workspace-1.empty, #custom-workspace-2.empty, #custom-workspace-3.empty, #custom-workspace-4.empty { color: #71868e; }
+#custom-workspace-1.active, #custom-workspace-2.active, #custom-workspace-3.active, #custom-workspace-4.active { background: #254653; color: #d8edf2; }
 #custom-clock-center { color: #d8e4e9; padding: 0 10px; }
-#workspaces button#niri-workspace-3,
-#workspaces button#niri-workspace-4,
-#workspaces button#niri-workspace-5 { min-width: 0; padding: 0; margin: 0; border: none; font-size: 0; opacity: 0; }
 #tray { padding: 0 5px; }
 #network, #custom-bluetooth, #custom-language, #pulseaudio,
 #custom-recording, #custom-power, #cpu, #memory, #custom-media {
@@ -55,6 +53,9 @@ window#waybar > box {
 }
 #custom-language { min-width: 0; padding: 0 4px; }
 #network, #custom-bluetooth, #pulseaudio { font-size: 16px; }
+#network, #custom-bluetooth, #custom-language, #pulseaudio,
+#custom-clock-center, #custom-notifications, #custom-wallpaper, #custom-media { border-radius: 9px; }
+widget:hover { border-radius: 9px; }
 #custom-power { font-size: 17px; }
 #custom-recording {
   background: #402428;
@@ -67,7 +68,8 @@ window#waybar > box {
 .modules-left, .modules-center, .modules-right { padding: 0 6px; }
 .modules-right > widget:nth-child(2), .modules-right > widget:nth-child(5),
 .modules-right > widget:last-child { margin-left: 9px; }
-#network:hover, #custom-bluetooth:hover, #custom-language:hover,
+#custom-clock-center:hover, #custom-notifications:hover, #custom-wallpaper:hover,
+#custom-media:hover, #network:hover, #custom-bluetooth:hover, #custom-language:hover,
 #pulseaudio:hover, #custom-power:hover, #custom-recording:hover {
   background: #24363e;
   border-radius: 9px;

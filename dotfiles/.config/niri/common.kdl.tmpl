@@ -37,6 +37,6 @@ blur {
 
 spawn-at-startup "awww-daemon"
 spawn-sh-at-startup "sleep 1; python3 @HOME@/.config/niri/scripts/wallpaper.py --apply-current"
-spawn-at-startup "waybar" "-c" "@HOME@/.config/waybar/niri/config.jsonc" "-s" "@HOME@/.config/waybar/niri/style.css"
+spawn-at-startup "python3" "@HOME@/.config/niri/scripts/panel.py"
 spawn-at-startup "swaync" "-c" "@HOME@/.config/niri/swaync/config.json" "-s" "@HOME@/.config/niri/swaync/style.css"
 spawn-at-startup "wl-paste" "--watch" "cliphist" "store"

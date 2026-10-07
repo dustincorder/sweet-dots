@@ -6,7 +6,8 @@ import subprocess
 import sys
 
 HOME = Path.home()
-CG = Path(os.environ.get('SWEET_POOL_CG_DIR', '/mnt/disk/sweet pool/assets/cg'))
+CG = Path(os.environ['SWEET_POOL_CG_DIR']) if os.environ.get('SWEET_POOL_CG_DIR') else None
+SPRITES = HOME / '.local/share/sweet-dots/fastfetch-logos'
 WALLPAPER = Path(sys.argv[1]) if len(sys.argv) > 1 else None
 OUTPUT = HOME / '.local/share/sweet-dots'
 PERSONAS = {
@@ -29,13 +30,13 @@ def selected_character():
 def main():
     OUTPUT.mkdir(parents=True, exist_ok=True)
     character = selected_character()
-    source = CG / 'st' / f'st{character}_制服_normal.png'
+    source = (CG / 'st' if CG else SPRITES) / f'st{character}_制服_normal.png'
     if not source.is_file():
         return
     png = OUTPUT / 'fastfetch-portrait.png'
     subprocess.run([
         'magick', str(source), '-trim', '+repage', '-resize', '360x640^',
-        '-background', '#101820', '-gravity', 'center', '-extent', '360x640',
+        '-background', 'none', '-gravity', 'center', '-extent', '360x640',
         str(png),
     ], check=True)
 

@@ -4,9 +4,9 @@ prefer = "saturation"
 contrast = 0.25
 source_color_index = 0
 
-[config.wallpaper]
-set = true
-command = "awww img --transition-type fade --transition-duration 0.45 {{ image }}"
+[templates.desktop-ui]
+input_path = "@HOME@/.config/niri/theme.json"
+output_path = "@HOME@/.config/sweet-dots/theme.json"
 
 [templates.waybar]
 input_path = "@HOME@/.config/waybar/niri/style.template.css"

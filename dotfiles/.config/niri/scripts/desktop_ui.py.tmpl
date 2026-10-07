@@ -1,0 +1,121 @@
+#!/usr/bin/env python3
+"""Shared GTK styling and asynchronous commands for desktop controls."""
+import json
+from pathlib import Path
+import re
+import subprocess
+import threading
+
+import gi
+gi.require_version('Gtk', '3.0')
+gi.require_version('Gdk', '3.0')
+from gi.repository import Gdk, GLib, Gtk
+
+THEME = Path.home() / '.config/sweet-dots/theme.json'
+FALLBACK = dict(bg='#15191c', surface='#202629', hover='#2b3337',
+                text='#e6edf0', muted='#a8b7bf', accent='#72cbd3',
+                on_accent='#00363b', border='#414b50', error='#ffb4ab')
+
+
+def palette():
+    colors = dict(FALLBACK)
+    try:
+        for key, value in json.loads(THEME.read_text()).items():
+            if key in colors and isinstance(value, str) and re.fullmatch(r'#[0-9a-fA-F]{6}', value):
+                colors[key] = value
+    except (OSError, ValueError, AttributeError):
+        pass
+    return colors
+
+
+def style():
+    provider = Gtk.CssProvider()
+    previous = None
+    def refresh():
+        nonlocal previous
+        p = palette()
+        if p == previous:
+            return True
+        css = '''
+        .sweet-dots { background: %(bg)s; color: %(text)s; font-family: Inter, "Noto Sans", Sans; font-size: 13px; }
+        .sweet-dots label { color: %(text)s; }
+        .sweet-dots .muted { color: %(muted)s; }
+        .sweet-dots .heading { font-size: 23px; font-weight: bold; }
+        .sweet-dots .card { background: %(surface)s; border: 1px solid %(border)s; border-radius: 16px; padding: 16px; }
+        .sweet-dots button, .sweet-dots entry, .sweet-dots combobox button {
+            background-image: none; background-color: %(surface)s; color: %(text)s;
+            border: 1px solid %(border)s; border-radius: 10px; padding: 8px 12px; box-shadow: none;
+        }
+        .sweet-dots button:hover { background-color: %(hover)s; }
+        .sweet-dots button:checked, .sweet-dots .accent { background-color: %(accent)s; color: %(on_accent)s; }
+        .sweet-dots button:checked label, .sweet-dots .accent label { color: %(on_accent)s; }
+        .sweet-dots button:disabled { opacity: 0.45; }
+        .sweet-dots list, .sweet-dots treeview, .sweet-dots viewport { background: %(surface)s; color: %(text)s; }
+        .sweet-dots row { border-radius: 9px; padding: 5px; }
+        .sweet-dots row:selected { background: %(hover)s; }
+        .sweet-dots notebook { background: transparent; border: none; }
+        .sweet-dots notebook > stack { background: %(bg)s; border: none; }
+        .sweet-dots notebook header { background: transparent; border: none; }
+        .sweet-dots notebook tab { background-image: none; box-shadow: none; border: none; border-radius: 10px; padding: 10px 18px; margin: 0 4px 12px 0; }
+        .sweet-dots notebook tab:checked { background: %(surface)s; }
+        .sweet-dots scale trough { background: %(hover)s; border-radius: 8px; min-height: 6px; }
+        .sweet-dots scale highlight { background: %(accent)s; border-radius: 8px; }
+        .sweet-dots scale slider { background: %(accent)s; border: none; border-radius: 50%%; }
+        .sweet-dots switch { background: %(hover)s; border-radius: 12px; }
+        .sweet-dots switch:checked { background: %(accent)s; }
+        .sweet-dots .error { color: %(error)s; }
+        window.sweet-popup { background: transparent; }
+        .sweet-dots selection { background: %(accent)s; color: %(on_accent)s; }
+        ''' % p
+        provider.load_from_data(css.encode())
+        previous = p
+        return True
+    refresh()
+    Gtk.StyleContext.add_provider_for_screen(Gdk.Screen.get_default(), provider,
+                                             Gtk.STYLE_PROVIDER_PRIORITY_USER)
+    GLib.timeout_add_seconds(2, refresh)
+    return provider
+
+
+def box(vertical=True, spacing=12, css=None):
+    widget = Gtk.Box(orientation=Gtk.Orientation.VERTICAL if vertical else Gtk.Orientation.HORIZONTAL,
+                     spacing=spacing)
+    if css:
+        widget.get_style_context().add_class(css)
+    return widget
+
+
+def label(text, css=None):
+    widget = Gtk.Label(label=text, xalign=0)
+    widget.set_line_wrap(True)
+    if css:
+        widget.get_style_context().add_class(css)
+    return widget
+
+
+def button(text, callback, css=None):
+    widget = Gtk.Button(label=text)
+    widget.connect('clicked', lambda *_: callback())
+    if css:
+        widget.get_style_context().add_class(css)
+    return widget
+
+
+def async_call(work, done):
+    def run():
+        try:
+            result, error = work(), None
+        except Exception as exc:
+            result, error = None, str(exc)
+        def deliver():
+            done(result, error)
+            return False
+        GLib.idle_add(deliver)
+    threading.Thread(target=run, daemon=True).start()
+
+
+def command(argv, timeout=20):
+    result = subprocess.run(argv, capture_output=True, text=True, timeout=timeout, check=False)
+    if result.returncode:
+        raise RuntimeError((result.stderr or result.stdout).strip() or argv[0])
+    return result.stdout.strip()

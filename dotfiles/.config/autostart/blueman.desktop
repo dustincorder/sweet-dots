@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=Blueman Applet
+Exec=blueman-applet
+Icon=blueman
+NotShowIn=niri;Niri;
+Terminal=false

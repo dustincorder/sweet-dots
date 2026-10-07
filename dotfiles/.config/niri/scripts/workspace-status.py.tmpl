@@ -1,0 +1,70 @@
+#!/usr/bin/env python3
+"""State for one configured workspace, without a transient creation button."""
+import json
+import signal
+import subprocess
+import sys
+
+
+def update(workspaces, event):
+    if 'WorkspacesChanged' in event:
+        return event['WorkspacesChanged']['workspaces']
+    if 'WorkspaceActivated' in event:
+        data = event['WorkspaceActivated']
+        activated = next((ws for ws in workspaces if ws['id'] == data['id']), None)
+        for ws in workspaces:
+            if activated and ws['output'] == activated['output']:
+                ws['is_active'] = ws['id'] == data['id']
+            if data['focused']:
+                ws['is_focused'] = ws['id'] == data['id']
+    if 'WorkspaceActiveWindowChanged' in event:
+        data = event['WorkspaceActiveWindowChanged']
+        for ws in workspaces:
+            if ws['id'] == data['workspace_id']:
+                ws['active_window_id'] = data['active_window_id']
+    return workspaces
+
+
+def status(workspaces, name):
+    workspace = next((ws for ws in workspaces if ws.get('name') == name), {})
+    classes = []
+    if workspace.get('is_active'):
+        classes.append('active')
+    if workspace.get('is_focused'):
+        classes.append('focused')
+    if workspace.get('active_window_id') is None:
+        classes.append('empty')
+    return {'text': name, 'class': classes}
+
+
+def main():
+    name = sys.argv[1]
+    workspaces, previous = [], None
+    stream = subprocess.Popen(['niri', 'msg', '--json', 'event-stream'], stdout=subprocess.PIPE,
+                              text=True)
+    def stop(*_):
+        raise SystemExit(0)
+    signal.signal(signal.SIGTERM, stop)
+    try:
+        for line in stream.stdout:
+            event = json.loads(line)
+            if not any(key.startswith('Workspace') for key in event):
+                continue
+            workspaces = update(workspaces, event)
+            current = status(workspaces, name)
+            if current != previous:
+                print(json.dumps(current), flush=True)
+                previous = current
+    except BrokenPipeError:
+        pass
+    finally:
+        stream.terminate()
+        try:
+            stream.wait(timeout=2)
+        except subprocess.TimeoutExpired:
+            stream.kill()
+            stream.wait()
+
+
+if __name__ == '__main__':
+    main()
