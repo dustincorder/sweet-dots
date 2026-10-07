@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
+language="$(python3 @HOME@/.config/niri/scripts/i18n.py)"
 if bluetoothctl show 2>/dev/null | grep -q 'Powered: yes'; then
-    printf '{"text":"󰂯","tooltip":"Bluetooth включён · нажми, чтобы открыть устройства"}\n'
+    if [ "$language" = ru ]; then tooltip="Bluetooth включён · нажми, чтобы открыть устройства"; else tooltip="Bluetooth is on · click to open devices"; fi
+    printf '{"text":"󰂯","tooltip":"%s"}\n' "$tooltip"
 else
-    printf '{"text":"󰂲","tooltip":"Bluetooth выключен · нажми, чтобы открыть устройства"}\n'
+    if [ "$language" = ru ]; then tooltip="Bluetooth выключен · нажми, чтобы открыть устройства"; else tooltip="Bluetooth is off · click to open devices"; fi
+    printf '{"text":"󰂲","tooltip":"%s"}\n' "$tooltip"
 fi

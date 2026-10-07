@@ -1,27 +1,23 @@
 {
   "layer": "top",
-  "position": "top",
-  "height": 40,
-  "margin-top": 7,
+  "position": "@PANEL_POSITION@",
+  "height": @PANEL_HEIGHT@,
+  "margin-top": @PANEL_MARGIN_TOP@,
+  "margin-bottom": @PANEL_MARGIN_BOTTOM@,
   "margin-left": 10,
   "margin-right": 10,
   "spacing": 5,
   "exclusive": true,
   "passthrough": false,
   "gtk-layer-shell": true,
-  "modules-left": ["custom/launcher", "niri/workspaces"],
-  "modules-center": [],
-  "modules-right": ["cpu", "memory", "tray", "network", "custom/bluetooth", "custom/language", "pulseaudio", "custom/power", "custom/date-ru"],
+  "modules-left": @MODULES_LEFT@,
+  "modules-center": @MODULES_CENTER@,
+  "modules-right": @MODULES_RIGHT@,
+  @USER_WIDGET_DEFS@
 
-  "custom/launcher": {
-    "format": "󰍜",
-    "tooltip": true,
-    "tooltip-format": "Приложения · Mod+D",
-    "on-click": "rofi -show drun -theme @HOME@/.config/rofi/themes/niri.rasi -no-lazy-grab -kb-cancel Escape,Control+g -kb-accept-entry Return,KP_Enter"
-  },
   "niri/workspaces": {
-    "format": "{name}",
-    "persistent-workspaces": {"*": ["1", "2", "3", "4"]},
+    "format": "{index}",
+    "persistent-workspaces": {"*": [@WORKSPACE_LIST@]},
     "on-click": "activate",
     "on-scroll-up": "focus-workspace-up",
     "on-scroll-down": "focus-workspace-down"
@@ -34,14 +30,12 @@
   "cpu": {
     "interval": 5,
     "format": "󰘚 {usage}%",
-    "tooltip": true,
-    "on-click": "@HOME@/.config/niri/scripts/resource-overlay.sh"
+    "tooltip": true
   },
   "memory": {
     "interval": 10,
     "format": "󰍛 {percentage}%",
-    "tooltip": true,
-    "on-click": "@HOME@/.config/niri/scripts/resource-overlay.sh"
+    "tooltip": true
   },
   "network": {
     "interval": 5,
@@ -71,7 +65,29 @@
   "tray": {
     "icon-size": 16,
     "spacing": 8,
-    "show-passive-items": true
+    "show-passive-items": true,
+    "ignored-items": ["nm-applet", "blueman-applet"]
+  },
+  "custom/notifications": {
+    "format": "󰂚",
+    "tooltip": true,
+    "tooltip-format": "@UI_NOTIFICATIONS_BUTTON@",
+    "on-click": "@HOME@/.config/niri/scripts/toggle-notifications.sh"
+  },
+  "custom/wallpaper": {
+    "format": "󰸉",
+    "tooltip": true,
+    "tooltip-format": "@UI_WALLPAPER@",
+    "on-click": "python3 @HOME@/.config/niri/scripts/wallpaper.py"
+  },
+  "custom/media": {
+    "exec": "python3 @HOME@/.config/niri/scripts/media-status.py",
+    "return-type": "json",
+    "interval": 3,
+    "max-length": 26,
+    "tooltip": true,
+    "on-click": "playerctl play-pause",
+    "on-click-right": "playerctl next"
   },
   "custom/language": {
     "exec": "@HOME@/.config/niri/scripts/keyboard-layout.sh",
@@ -79,16 +95,25 @@
     "interval": 1,
     "on-click": "niri msg action switch-layout next"
   },
+  "custom/recording": {
+    "exec": "@HOME@/.config/niri/scripts/recording-status.sh",
+    "return-type": "json",
+    "interval": 1,
+    "signal": 8,
+    "tooltip": true,
+    "on-click": "@HOME@/.config/niri/scripts/record-toggle.sh"
+  },
   "custom/power": {
     "format": "⏻",
     "tooltip": true,
-    "tooltip-format": "Питание · блокировка, выход, сон, перезапуск, выключение",
+    "tooltip-format": "@POWER_TOOLTIP@",
     "on-click": "wlogout --protocol layer-shell --layout @HOME@/.config/wlogout/layout --css @HOME@/.config/wlogout/style.css --buttons-per-row 3 --column-spacing 12 --row-spacing 12 --margin 24"
   },
-  "custom/date-ru": {
-    "exec": "python3 @HOME@/.config/niri/scripts/date-ru.py",
-    "interval": 30,
-    "tooltip": false,
+  "custom/clock-center": {
+    "exec": "python3 @HOME@/.config/niri/scripts/clock.py",
+    "return-type": "json",
+    "interval": 15,
+    "tooltip": true,
     "on-click": "@HOME@/.config/niri/scripts/toggle-notifications.sh"
   }
 }

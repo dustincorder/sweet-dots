@@ -1,0 +1,57 @@
+#!/usr/bin/env python3
+"""Small runtime translation table shared by Sweet Dots scripts."""
+import json
+from pathlib import Path
+import sys
+
+SETTINGS = Path.home() / '.config/sweet-dots/settings.json'
+TEXT = {
+    'wallpaper_prompt': {'ru': 'Обои', 'en': 'Wallpaper'},
+    'wallpaper_missing': {'ru': 'Файл обоев не найден', 'en': 'Wallpaper file not found'},
+    'capture_prompt': {'ru': 'Снимок и запись', 'en': 'Screenshot and recording'},
+    'capture_region': {'ru': 'Снимок области · аннотации', 'en': 'Capture region · annotate'},
+    'capture_screen': {'ru': 'Снимок всего экрана · аннотации', 'en': 'Capture screen · annotate'},
+    'record_region_audio': {'ru': 'Запись области · со звуком', 'en': 'Record region · with audio'},
+    'record_region_silent': {'ru': 'Запись области · без звука', 'en': 'Record region · silent'},
+    'record_screen_audio': {'ru': 'Запись всего экрана · со звуком', 'en': 'Record screen · with audio'},
+    'record_screen_silent': {'ru': 'Запись всего экрана · без звука', 'en': 'Record screen · silent'},
+    'record_started': {'ru': 'Запись началась', 'en': 'Recording started'},
+    'record_stop_hint': {'ru': 'Нажми ту же кнопку ещё раз, чтобы остановить.', 'en': 'Press the same shortcut again to stop.'},
+    'record_stopped': {'ru': 'Запись остановлена', 'en': 'Recording stopped'},
+    'record_saved': {'ru': 'Видео сохранено', 'en': 'Video saved'},
+    'record_failed': {'ru': 'Не удалось начать запись', 'en': 'Could not start recording'},
+    'clipboard': {'ru': 'Буфер обмена', 'en': 'Clipboard'},
+    'clipboard_empty': {'ru': 'История буфера обмена пуста', 'en': 'Clipboard history is empty'},
+    'clock_calendar': {'ru': 'Открыть календарь и уведомления', 'en': 'Open calendar and notifications'},
+    'power_tooltip': {'ru': 'Питание · блокировка, выход, сон, перезапуск, выключение', 'en': 'Power · lock, log out, suspend, restart, power off'},
+}
+
+WALLPAPERS = {
+    'aquarium': {'ru': 'Йоджи — аквариум', 'en': 'Youji — Aquarium'},
+    'yoji-school': {'ru': 'Йоджи — школа', 'en': 'Youji — School'},
+    'yoji-train': {'ru': 'Йоджи — поезд', 'en': 'Youji — Train'},
+    'tetsuo-black-cat': {'ru': 'Тетсуо — чёрный кот', 'en': 'Tetsuo — Black Cat'},
+    'zenya-shopping': {'ru': 'Зенья — прогулка', 'en': 'Zenya — Walk'},
+    'makoto-dog-walk': {'ru': 'Макото — прогулка', 'en': 'Makoto — Walk'},
+    'makoto-junk-food': {'ru': 'Макото и Йоджи — перекус', 'en': 'Makoto & Youji — Late Snack'},
+    'tetsuo-rain': {'ru': 'Тетсуо и Йоджи — дождь', 'en': 'Tetsuo & Youji — Rain'},
+    'zenya-bruised': {'ru': 'Зенья — синяк', 'en': 'Zenya — Bruised'},
+}
+
+
+def language():
+    try:
+        value = json.loads(SETTINGS.read_text()).get('language', 'ru')
+    except (OSError, ValueError, AttributeError):
+        value = 'ru'
+    return value if value in {'ru', 'en'} else 'ru'
+
+
+def tr(key, lang=None):
+    return TEXT.get(key, {}).get(lang or language(), key)
+
+
+if __name__ == '__main__':
+    locale = sys.argv[1] if len(sys.argv) > 1 else language()
+    key = sys.argv[2] if len(sys.argv) > 2 else ''
+    print(tr(key, locale))

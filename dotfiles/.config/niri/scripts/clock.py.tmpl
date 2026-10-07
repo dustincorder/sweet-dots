@@ -1,0 +1,28 @@
+#!/usr/bin/env python3
+import json
+from datetime import datetime
+from pathlib import Path
+
+SETTINGS = Path.home() / '.config/sweet-dots/settings.json'
+try:
+    prefs = json.loads(SETTINGS.read_text())
+except (OSError, ValueError):
+    prefs = {}
+now = datetime.now().astimezone()
+locale = prefs.get('language', 'ru')
+if prefs.get('clock_date', False):
+    if locale == 'en':
+        text = now.strftime('%a, %d %b · %H:%M')
+    else:
+        weekdays = ('пн', 'вт', 'ср', 'чт', 'пт', 'сб', 'вс')
+        months = ('янв', 'фев', 'мар', 'апр', 'май', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек')
+        text = f'{weekdays[now.weekday()]}, {now.day:02d} {months[now.month - 1]} · {now:%H:%M}'
+else:
+    text = now.strftime('%H:%M')
+if locale == 'en':
+    tooltip = now.strftime('%A, %d %B %Y · %H:%M')
+else:
+    weekdays = ('понедельник', 'вторник', 'среда', 'четверг', 'пятница', 'суббота', 'воскресенье')
+    months = ('января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря')
+    tooltip = f'{weekdays[now.weekday()]}, {now.day:02d} {months[now.month - 1]} {now.year} · {now:%H:%M}'
+print(json.dumps({'text': text, 'tooltip': tooltip}, ensure_ascii=False))

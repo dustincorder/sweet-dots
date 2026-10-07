@@ -6,3 +6,6 @@ Thumbs.db
 wallpapers/*
 !wallpapers/README.md
 screenshots/*.png
+# Python bytecode from local template checks; never commit.
+__pycache__/
+*.pyc

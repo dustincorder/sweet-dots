@@ -4,7 +4,13 @@ set -euo pipefail
 layout=$(niri msg keyboard-layouts | sed -n 's/^[[:space:]]*\*[[:space:]]*[0-9][0-9]*[[:space:]]*//p' | head -n1)
 case "$layout" in
     *English*|*US*) label="EN" ;;
-    *Russian*|*рус*) label="РУС" ;;
+    *Russian*|*рус*) label="RU" ;;
     *) label="?" ;;
 esac
-printf '{"text":"%s","tooltip":"Раскладка: %s · Shift+Alt переключает"}\n' "$label" "$layout"
+language="$(python3 @HOME@/.config/niri/scripts/i18n.py)"
+if [ "$language" = ru ]; then
+    hint="Раскладка: $layout · Shift+Alt переключает"
+else
+    hint="Keyboard: $layout · Shift+Alt switches"
+fi
+printf '{"text":"%s","tooltip":"%s"}\n' "$label" "$hint"

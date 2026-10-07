@@ -1,0 +1,18 @@
+#!/usr/bin/env python3
+import json
+import subprocess
+
+try:
+    result = subprocess.run(
+        ['playerctl', 'metadata', '--format', '{{artist}} — {{title}}'],
+        check=True, capture_output=True, text=True, timeout=1,
+    )
+    title = result.stdout.strip()
+    state = subprocess.run(['playerctl', 'status'], capture_output=True, text=True, timeout=1).stdout.strip()
+except (subprocess.SubprocessError, FileNotFoundError):
+    title = ''
+    state = ''
+if not title:
+    raise SystemExit(0)
+icon = '󰏤' if state == 'Playing' else '󰐊'
+print(json.dumps({'text': f'{icon}  {title}', 'tooltip': f'{state}: {title}'}, ensure_ascii=False))

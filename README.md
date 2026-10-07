@@ -4,7 +4,7 @@
 
 ### A quiet, dark Niri desktop with a deep-water palette
 
-One large window by default. Four workspaces. Split into columns when you choose.
+One large window by default. Choose two, three, or four workspaces. Split into columns when you choose.
 
 [![Niri](https://img.shields.io/badge/WM-Niri-172c3b?style=for-the-badge)](https://github.com/niri-wm/niri)
 [![Wayland](https://img.shields.io/badge/Session-Wayland-1b3544?style=for-the-badge)](https://wayland.freedesktop.org/)
@@ -17,14 +17,14 @@ One large window by default. Four workspaces. Split into columns when you choose
 
 | | | |
 |---|---|---|
-| **Compositor** | Niri | Scrolling columns; four named workspaces |
-| **Panel** | Waybar | Launcher and workspaces at left; tray, network, Bluetooth, layout, volume, power, and Russian date at right |
+| **Compositor** | Niri | Scrolling columns; workspaces are selected during installation |
+| **Panel** | Waybar | Workspaces left, clock centered, configurable widgets right |
 | **Files** | Nautilus | GNOME Files, opened by `Mod+E` |
-| **Launcher** | Rofi | Search installed applications and open the wallpaper picker |
+| **Launcher** | Rofi | Search installed applications with `Win+Space`; no launcher button on the panel |
 | **Notifications** | SwayNC | Compact notifications, history, and a quick controls panel |
 | **Theme** | Matugen + awww | Dark colors derived from the selected wallpaper |
 | **Terminal** | Kitty + Alacritty | JetBrains Mono Nerd Font and generated terminal colors |
-| **Shell** | Zsh + Fastfetch | Single-line prompt and a local character portrait that follows the selected wallpaper |
+| **Shell** | Zsh + Fastfetch | Single-line prompt and a full-resolution portrait that follows the selected wallpaper |
 | **Lock screen** | Hyprlock | Aquarium backdrop, separate AccountsService avatar, username, and password prompt |
 | **Power menu** | Wlogout | Lock, logout, suspend, reboot, and power off |
 | **Capture** | Grim + Satty + wf-recorder | Annotated screenshots and recordings with or without audio |
@@ -36,16 +36,18 @@ The setup is designed for mouse-first use. New windows take the available width;
 For Arch Linux and Arch-based distributions. Install the packages first; the script backs up and deploys dotfiles. It does not change the display manager or install packages.
 
 ```sh
-git clone git@github.com:dustincorder/sweet-dots.git
+git clone <repository-url>
 cd sweet-dots
 ./install.sh
 ```
 
-The installer backs up replaced files under `~/.local/state/sweet-dots/backups/` and expands the `@HOME@` paths for your account.
+The installer asks for the interface language (Russian or English) and workspace count (two, three, or four). It backs up replaced files under `~/.local/state/sweet-dots/backups/` and expands the `@HOME@` paths for your account.
+
+Open **Sweet Dots Settings** from the application launcher, press `Mod+Shift+,`, or run `python3 ~/.config/niri/scripts/settings.py`. The settings window lets you change panel position and height, widget size, clock date, language, and workspace count. Its dock tab lets you add, remove, reorder, and reposition built-in widgets. The shortcuts tab lets you add, edit, and remove custom keybindings and panel buttons. Changes are saved under `~/.config/sweet-dots/settings.json`.
 
 ### Packages
 
-Core: `niri`, `waybar`, `rofi-wayland`, `swaync`, `wlogout`, `kitty`, `alacritty`, `matugen`, `awww`, `hyprlock`, `hypridle`, `hyprpolkitagent`, `zsh`, `fastfetch`.
+Core: `niri`, `waybar`, `rofi-wayland`, `swaync`, `wlogout`, `kitty`, `alacritty`, `matugen`, `awww`, `hyprlock`, `hypridle`, `hyprpolkitagent`, `zsh`, `fastfetch`, `tk` (Python Tk, for the settings window).
 
 Desktop tools: `nautilus`, `grim`, `slurp`, `satty`, `wf-recorder`, `wl-clipboard`, `cliphist`, `imagemagick`, `playerctl`, `networkmanager`, `bluez`, `pipewire`, `pipewire-pulse`, `wireplumber`, `brightnessctl`. The Zsh config expects Oh My Zsh at `~/.oh-my-zsh`.
 
@@ -69,7 +71,8 @@ It makes seven static, 2732×1536 dark wallpapers and a Fastfetch portrait from 
 
 | Shortcut | Action |
 |---|---|
-| `Mod+D` or `Mod+Space` | Open the app picker |
+| `Mod+Space` | Open the app picker |
+| `Mod+Shift+S` | Open Sweet Dots Settings |
 | `Ctrl+Alt+T` | Open Kitty |
 | `Mod+Q` | Close the focused window |
 | `Mod+←/→` | Focus the adjacent column |
@@ -77,8 +80,8 @@ It makes seven static, 2732×1536 dark wallpapers and a Fastfetch portrait from 
 | `Mod+Shift+←/→` | Move a column |
 | `Mod+R` | Cycle the column width |
 | `Mod+F` | Toggle floating mode |
-| `Mod+1` … `Mod+4` | Switch workspaces |
-| `Mod+Shift+1` … `Mod+Shift+4` | Move the window to a workspace |
+| `Mod+1` … `Mod+N` | Switch workspaces (`N` is chosen during installation) |
+| `Mod+Shift+1` … `Mod+Shift+N` | Move the window to a workspace |
 | `Print` | Select and annotate a screenshot |
 | `Shift+Print` | Annotate a full-screen screenshot |
 | `Ctrl+Print` | Record a selected area with audio; press again to stop |
@@ -86,7 +89,9 @@ It makes seven static, 2732×1536 dark wallpapers and a Fastfetch portrait from 
 | `Mod+V` | Open clipboard history; images are supported |
 | `Mod+Shift+/` | Open Niri’s built-in shortcut guide |
 
-Click the power symbol at the right end of the panel for lock, logout, suspend, reboot, and shutdown. The keyboard layout indicator stays beside the launcher and workspaces.
+The default panel order: workspaces (exactly the configured count), clock, tray, keyboard layout, network, Bluetooth, volume, and power. Click the clock for calendar and notifications. Clipboard history opens with `Mod+V` only. The settings window can move and reorder widgets, change the panel height and widget size, or add optional CPU, memory, media, wallpaper, and notification widgets.
+
+Click the power symbol for lock, logout, suspend, reboot, and shutdown. App shortcuts and panel buttons can be created together in the settings window; keybindings are validated before they are written to Niri.
 
 Kitty opens a URL under the pointer with a middle click. In Alacritty, click a URL with the left mouse button; middle click remains paste-from-selection.
 

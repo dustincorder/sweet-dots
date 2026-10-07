@@ -4,7 +4,6 @@ hotkey-overlay {
 
 binds {
     Mod+Shift+Slash { show-hotkey-overlay; }
-    Mod+D { spawn "rofi" "-show" "drun" "-theme" "@HOME@/.config/rofi/themes/niri.rasi" "-no-lazy-grab" "-kb-cancel" "Escape,Control+g" "-kb-accept-entry" "Return,KP_Enter"; }
     Mod+Space { spawn "rofi" "-show" "drun" "-theme" "@HOME@/.config/rofi/themes/niri.rasi" "-no-lazy-grab" "-kb-cancel" "Escape,Control+g" "-kb-accept-entry" "Return,KP_Enter"; }
     Mod+T { spawn "kitty" "--config" "@HOME@/.config/kitty/niri.conf"; }
     Ctrl+Alt+T { spawn "kitty" "--config" "@HOME@/.config/kitty/niri.conf"; }
@@ -12,6 +11,7 @@ binds {
     Mod+N { spawn "@HOME@/.config/niri/scripts/toggle-notifications.sh"; }
     Mod+V { spawn "@HOME@/.config/niri/scripts/clipboard-menu.sh"; }
     Mod+Shift+W { spawn "python3" "@HOME@/.config/niri/scripts/wallpaper.py"; }
+    Mod+Shift+S { spawn "python3" "@HOME@/.config/niri/scripts/settings.py"; }
     Mod+Shift+Print { spawn "@HOME@/.config/niri/scripts/capture-tools.sh"; }
 
     Mod+Q repeat=false { close-window; }
@@ -43,14 +43,8 @@ binds {
 
     Mod+O { toggle-overview; }
     Mod+Tab { toggle-overview; }
-    Mod+1 { focus-workspace "1"; }
-    Mod+2 { focus-workspace "2"; }
-    Mod+3 { focus-workspace "3"; }
-    Mod+4 { focus-workspace "4"; }
-    Mod+Shift+1 { move-column-to-workspace "1"; }
-    Mod+Shift+2 { move-column-to-workspace "2"; }
-    Mod+Shift+3 { move-column-to-workspace "3"; }
-    Mod+Shift+4 { move-column-to-workspace "4"; }
+@WORKSPACE_BINDS@
+@CUSTOM_BINDS@
     Mod+Page_Up { focus-workspace-up; }
     Mod+Page_Down { focus-workspace-down; }
     Mod+WheelScrollUp cooldown-ms=150 { focus-workspace-up; }

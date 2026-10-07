@@ -20,7 +20,7 @@
   "hide-on-clear": true,
   "hide-on-action": true,
   "relative-timestamps": true,
-  "text-empty": "Новых уведомлений нет",
+  "text-empty": "@UI_EMPTY@",
   "widgets": [
     "buttons-grid",
     "volume",
@@ -31,12 +31,12 @@
   ],
   "widget-config": {
     "title": {
-      "text": "Уведомления",
+      "text": "@UI_NOTIFICATIONS@",
       "clear-all-button": true,
-      "button-text": "Очистить"
+      "button-text": "@UI_CLEAR@"
     },
     "dnd": {
-      "text": "Не беспокоить"
+      "text": "@UI_DND@"
     },
     "volume": {
       "label": "󰕾",
@@ -49,26 +49,26 @@
       "buttons-per-row": 2,
       "actions": [
         {
-          "label": "󰖩  Wi-Fi",
+          "label": "@UI_WIFI_LABEL@",
           "type": "toggle",
           "active": true,
           "command": "sh -c 'if [ \"$SWAYNC_TOGGLE_STATE\" = true ]; then nmcli radio wifi on; else nmcli radio wifi off; fi'",
           "update-command": "sh -c 'test \"$(nmcli radio wifi)\" = enabled && echo true || echo false'"
         },
         {
-          "label": "󰂯  Bluetooth",
+          "label": "@UI_BLUETOOTH_LABEL@",
           "type": "toggle",
           "active": true,
           "command": "sh -c 'if [ \"$SWAYNC_TOGGLE_STATE\" = true ]; then bluetoothctl power on; else bluetoothctl power off; fi'",
           "update-command": "sh -c 'bluetoothctl show | grep -q \"Powered: yes\" && echo true || echo false'"
         },
         {
-          "label": "󰛳  Сеть",
+          "label": "@UI_NETWORK_LABEL@",
           "type": "normal",
           "command": "nm-connection-editor"
         },
         {
-          "label": "󰕾  Устройства",
+          "label": "@UI_DEVICES_LABEL@",
           "type": "normal",
           "command": "blueman-manager"
         }
