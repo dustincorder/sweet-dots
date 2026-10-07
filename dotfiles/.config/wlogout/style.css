@@ -30,8 +30,8 @@ button span {
   background-color: transparent;
   margin-top: 72px;
 }
-#lock { background-image: image(url("/usr/share/wlogout/icons/lock.png")); }
-#logout { background-image: image(url("/usr/share/wlogout/icons/logout.png")); }
-#suspend { background-image: image(url("/usr/share/wlogout/icons/suspend.png")); }
-#reboot { background-image: image(url("/usr/share/wlogout/icons/reboot.png")); }
-#shutdown { background-image: image(url("/usr/share/wlogout/icons/shutdown.png")); }
+#lock { background-image: image(url("@HOME@/.config/wlogout/icons/lock.png")); }
+#logout { background-image: image(url("@HOME@/.config/wlogout/icons/logout.png")); }
+#suspend { background-image: image(url("@HOME@/.config/wlogout/icons/suspend.png")); }
+#reboot { background-image: image(url("@HOME@/.config/wlogout/icons/reboot.png")); }
+#shutdown { background-image: image(url("@HOME@/.config/wlogout/icons/shutdown.png")); }
