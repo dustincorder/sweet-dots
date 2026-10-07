@@ -5,36 +5,45 @@ background {
     noise = 0.02
 }
 image {
-    path = @HOME@/.face
-    size = 112
-    rounding = 56
+    path = @HOME@/.local/share/niri/avatar.png
+    size = 116
+    rounding = 58
     border_size = 2
     border_color = rgb(114, 203, 211)
-    position = 0, 158
+    position = 0, -88
     halign = center
     valign = center
 }
 label {
     text = $USER
-    font_family = Inter
-    font_size = 20
+    font_family = SF Pro Display
+    font_size = 19
     color = rgba(235, 243, 245, 235)
-    position = 0, 78
+    position = 0, 8
     halign = center
     valign = center
 }
 label {
     text = $TIME
-    font_family = Inter
-    font_size = 64
+    font_family = SF Pro Display
+    font_size = 66
     color = rgba(238, 246, 248, 245)
-    position = 0, -12
+    position = 0, -218
+    halign = center
+    valign = center
+}
+label {
+    text = $DATE
+    font_family = SF Pro Display
+    font_size = 16
+    color = rgba(188, 205, 211, 220)
+    position = 0, -156
     halign = center
     valign = center
 }
 input-field {
-    size = 310, 50
-    position = 0, -94
+    size = 330, 54
+    position = 0, 92
     halign = center
     valign = center
     outline_thickness = 2

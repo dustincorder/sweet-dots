@@ -8,7 +8,7 @@ binds {
     Mod+Space { spawn "rofi" "-show" "drun" "-theme" "@HOME@/.config/rofi/themes/niri.rasi" "-no-lazy-grab" "-kb-cancel" "Escape,Control+g" "-kb-accept-entry" "Return,KP_Enter"; }
     Mod+T { spawn "kitty" "--config" "@HOME@/.config/kitty/niri.conf"; }
     Ctrl+Alt+T { spawn "kitty" "--config" "@HOME@/.config/kitty/niri.conf"; }
-    Mod+E { spawn "thunar"; }
+    Mod+E { spawn "nautilus" "--new-window"; }
     Mod+N { spawn "@HOME@/.config/niri/scripts/toggle-notifications.sh"; }
     Mod+V { spawn "@HOME@/.config/niri/scripts/clipboard-menu.sh"; }
     Mod+Shift+W { spawn "python3" "@HOME@/.config/niri/scripts/wallpaper.py"; }
@@ -17,6 +17,8 @@ binds {
     Mod+Q repeat=false { close-window; }
     Mod+Left { focus-column-left-or-last; }
     Mod+Right { focus-column-right-or-first; }
+    Alt+Left { consume-or-expel-window-left; }
+    Alt+Right { consume-or-expel-window-right; }
     Mod+H { focus-column-left; }
     Mod+L { focus-column-right; }
     Mod+Shift+Left { move-column-left; }

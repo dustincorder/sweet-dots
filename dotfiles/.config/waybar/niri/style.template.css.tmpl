@@ -15,8 +15,8 @@ window#waybar > box {
 }
 #custom-launcher, #workspaces, #window, #cpu, #memory, #network,
 #custom-bluetooth, #pulseaudio, #tray, #custom-language, #custom-wallpaper,
-#custom-quick-settings, #clock { margin: 4px 2px; }
-#custom-launcher, #custom-language, #custom-wallpaper, #custom-quick-settings {
+#custom-quick-settings, #custom-power, #clock, #custom-date-ru { margin: 4px 2px; }
+#custom-launcher, #custom-language, #custom-wallpaper, #custom-quick-settings, #custom-power {
   background: #232426;
   border: 1px solid #3b3d43;
   border-radius: 9px;
@@ -43,12 +43,15 @@ window#waybar > box {
 #workspaces button.empty { color: {{colors.outline.dark.hex}}; }
 #workspaces button:nth-child(n+5) { min-width: 0; padding: 0; margin: 0; opacity: 0; }
 #window { color: {{colors.on_surface_variant.dark.hex}}; padding: 0 10px; }
-#cpu, #memory, #network, #custom-bluetooth, #pulseaudio, #custom-language, #clock {
+#cpu, #memory, #network, #custom-bluetooth, #pulseaudio, #custom-language, #custom-power, #clock, #custom-date-ru {
   color: {{colors.on_surface.dark.hex}};
   padding: 0 5px;
 }
 #network, #pulseaudio { color: {{colors.primary.dark.hex}}; }
 #tray { padding: 0 4px; }
+#custom-power { min-width: 30px; font-size: 17px; }
+#custom-power:hover { background: #303943; color: {{colors.on_surface.dark.hex}}; }
+#custom-date-ru { color: {{colors.on_surface.dark.hex}}; padding: 0 9px; }
 #custom-quick-settings { background: #34363d; border-color: #3b3d43; }
 tooltip {
   background: {{colors.surface_container_high.dark.hex}};

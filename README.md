@@ -2,61 +2,79 @@
 
 # sweet-dots
 
-**A calm, dark Niri desktop inspired by the deep blue aquarium mood of Sweet Pool.**
+### A quiet, dark Niri desktop with a deep-water palette
 
-[![Niri](https://img.shields.io/badge/WM-Niri-263440?style=flat-square)](https://github.com/niri-wm/niri)
-[![Wayland](https://img.shields.io/badge/Session-Wayland-253847?style=flat-square)](https://wayland.freedesktop.org/)
-[![Arch Linux](https://img.shields.io/badge/Distro-Arch%20based-263440?style=flat-square)](https://archlinux.org/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-455260?style=flat-square)](LICENSE)
+One large window by default. Four workspaces. Split into columns when you choose.
+
+[![Niri](https://img.shields.io/badge/WM-Niri-172c3b?style=for-the-badge)](https://github.com/niri-wm/niri)
+[![Wayland](https://img.shields.io/badge/Session-Wayland-1b3544?style=for-the-badge)](https://wayland.freedesktop.org/)
+[![Arch based](https://img.shields.io/badge/Linux-Arch%20based-253442?style=for-the-badge)](https://archlinux.org/)
+[![MIT](https://img.shields.io/badge/License-MIT-354554?style=for-the-badge)](LICENSE)
 
 </div>
 
-A personal Niri setup for a mouse-first workflow: one full-width window by default, four workspaces, and optional columns when you want to split the view. The interface uses dark surfaces, quiet cyan/lilac accents, soft corners, and translucent panels.
+## At a glance
 
-> The Sweet Pool artwork and other personal wallpapers are not included. The local wallpaper picker uses your own images and Matugen builds a matching dark palette.
+| | | |
+|---|---|---|
+| **Compositor** | Niri | Scrolling columns; four named workspaces |
+| **Panel** | Waybar | Launcher and workspaces at left; tray, network, Bluetooth, layout, volume, power, and Russian date at right |
+| **Files** | Nautilus | GNOME Files, opened by `Mod+E` |
+| **Launcher** | Rofi | Search installed applications and open the wallpaper picker |
+| **Notifications** | SwayNC | Compact notifications, history, and a quick controls panel |
+| **Theme** | Matugen + awww | Dark colors derived from the selected wallpaper |
+| **Terminal** | Kitty + Alacritty | JetBrains Mono Nerd Font and generated terminal colors |
+| **Shell** | Zsh + Fastfetch | Single-line prompt and a local character portrait that follows the selected wallpaper |
+| **Lock screen** | Hyprlock | Aquarium backdrop, separate AccountsService avatar, username, and password prompt |
+| **Power menu** | Wlogout | Lock, logout, suspend, reboot, and power off |
+| **Capture** | Grim + Satty + wf-recorder | Annotated screenshots and recordings with or without audio |
 
-## What is included
-
-- **Niri** — scrolling columns, four named workspaces, window rules, animations, idle lock, and keybindings
-- **Waybar** — workspaces, tray, date, network, Bluetooth, audio, and resource widgets
-- **Rofi + SwayNC** — app picker, quick controls, notifications, and history
-- **Kitty + Alacritty** — dark wallpaper-derived colors; Alacritty uses a borderless window frame
-- **Matugen + awww** — wallpaper selection, smooth transition, and generated colors for Niri, Waybar, Rofi, SwayNC, and terminals
-- **Hyprlock** — lock screen with user avatar and password prompt
-- **Zsh + Fastfetch** — a short two-line prompt and a matching system summary
-- **Capture tools** — screenshot annotation and screen recording with or without audio
+The setup is designed for mouse-first use. New windows take the available width; they do not split the screen automatically. Use `Alt+←/→` when you want to split a window into another column.
 
 ## Install
 
-Designed for Arch Linux and Arch-based distributions. Install the packages first; the script only deploys configuration files and does not install packages or change your display manager.
-
-Core packages: `niri`, `waybar`, `rofi-wayland`, `swaync`, `kitty`, `alacritty`, `matugen`, `awww`, `hyprlock`, `hypridle`, `hyprpolkitagent`, `zsh`, and `fastfetch`.
-
-Desktop helpers: `thunar`, `grim`, `slurp`, `satty`, `wf-recorder`, `wl-clipboard`, `cliphist`, `imagemagick`, `playerctl`, `networkmanager`, `bluez`, `pipewire`, `pipewire-pulse`, `wireplumber`, and `brightnessctl`. Oh My Zsh is expected at `~/.oh-my-zsh`.
+For Arch Linux and Arch-based distributions. Install the packages first; the script backs up and deploys dotfiles. It does not change the display manager or install packages.
 
 ```sh
-git clone https://github.com/dustincorder/sweet-dots.git
+git clone git@github.com:dustincorder/sweet-dots.git
 cd sweet-dots
 ./install.sh
 ```
 
-The installer backs up every file it replaces under `~/.local/state/sweet-dots/backups/`. It expands the `@HOME@` paths for the current account and creates the local wallpaper folder. It does not include any wallpaper files.
+The installer backs up replaced files under `~/.local/state/sweet-dots/backups/` and expands the `@HOME@` paths for your account.
 
-Put images in `~/.local/share/niri/wallpapers/`. Supported formats are PNG, JPEG, WebP, and AVIF. Open the wallpaper picker from the top bar; Matugen updates the accent colors.
+### Packages
 
-Choose the **Niri** session in your display manager to use the full desktop. GNOME remains a separate session.
+Core: `niri`, `waybar`, `rofi-wayland`, `swaync`, `wlogout`, `kitty`, `alacritty`, `matugen`, `awww`, `hyprlock`, `hypridle`, `hyprpolkitagent`, `zsh`, `fastfetch`.
+
+Desktop tools: `nautilus`, `grim`, `slurp`, `satty`, `wf-recorder`, `wl-clipboard`, `cliphist`, `imagemagick`, `playerctl`, `networkmanager`, `bluez`, `pipewire`, `pipewire-pulse`, `wireplumber`, `brightnessctl`. The Zsh config expects Oh My Zsh at `~/.oh-my-zsh`.
+
+Choose **Niri** in the login screen. GNOME remains available as a separate session.
+
+## Wallpapers
+
+Put your own images in `~/.local/share/niri/wallpapers/`. The picker accepts PNG, JPEG, WebP, and AVIF. Selecting an image updates the dark palette used by Niri, Waybar, Rofi, SwayNC, and the terminals.
+
+To add a personal Sweet Pool set from an existing local game-data folder, run:
+
+```sh
+~/.config/niri/scripts/prepare-wallpapers.sh
+```
+
+It makes seven static, 2732×1536 dark wallpapers and a Fastfetch portrait from scenes with Youji, Makoto, Tetsuo, and Zenya. The set includes one mild bruised-face scene; it avoids sex scenes and body horror. If the game files are stored elsewhere, set `SWEET_POOL_CG_DIR` to the folder that contains `ev/` and `st/` before running it. The game artwork stays local and is not included in this repository.
 
 ## Keybindings
 
-`Mod` means Super/Windows. The nested preview launched from GNOME may use Alt as its Niri modifier.
+`Mod` is Super/Windows. In a nested preview launched from GNOME, Niri may use Alt as its modifier.
 
 | Shortcut | Action |
 |---|---|
 | `Mod+D` or `Mod+Space` | Open the app picker |
 | `Ctrl+Alt+T` | Open Kitty |
 | `Mod+Q` | Close the focused window |
-| `Mod+←` / `Mod+→` | Focus the adjacent column |
-| `Mod+Shift+←` / `Mod+Shift+→` | Move a column |
+| `Mod+←/→` | Focus the adjacent column |
+| `Alt+←/→` | Split or rejoin the focused window with the adjacent column |
+| `Mod+Shift+←/→` | Move a column |
 | `Mod+R` | Cycle the column width |
 | `Mod+F` | Toggle floating mode |
 | `Mod+1` … `Mod+4` | Switch workspaces |
@@ -65,21 +83,17 @@ Choose the **Niri** session in your display manager to use the full desktop. GNO
 | `Shift+Print` | Annotate a full-screen screenshot |
 | `Ctrl+Print` | Record a selected area with audio; press again to stop |
 | `Ctrl+Shift+Print` | Record a selected area without audio; press again to stop |
-| `Mod+V` | Open clipboard history |
+| `Mod+V` | Open clipboard history; images are supported |
 | `Mod+Shift+/` | Open Niri’s built-in shortcut guide |
 
-New windows fill the available width by default. Use `Mod+R` or the bracket bindings to make columns side by side when needed.
+Click the power symbol at the right end of the panel for lock, logout, suspend, reboot, and shutdown. The keyboard layout indicator stays beside the launcher and workspaces.
 
-## Theme notes
+Kitty opens a URL under the pointer with a middle click. In Alacritty, click a URL with the left mouse button; middle click remains paste-from-selection.
 
-- Firefox uses its **Dark** appearance; set it in Firefox under **Settings → General → Appearance** if the current browser profile keeps its own light theme.
-- Personal wallpapers and avatars are machine-local and are not tracked.
-- The login manager theme is not part of this repository.
+## Personal files
 
-## Suggested GitHub topics
-
-`niri` · `niri-dots` · `wayland` · `dotfiles` · `arch-linux` · `waybar` · `matugen` · `rofi` · `swaync` · `sweet-pool`
+Wallpaper files, avatars, and generated local color files are machine-specific. Keep them outside the repository; the checked-in configs point to paths under your home directory. Set the lock-screen avatar at `~/.local/share/niri/avatar.png`.
 
 ## License
 
-MIT. See [LICENSE](LICENSE).
+The configuration and installer are MIT licensed. See [LICENSE](LICENSE).

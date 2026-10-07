@@ -16,11 +16,23 @@ def available_wallpapers():
     images = [p for p in WALLPAPERS.iterdir()
               if p.is_file() and p.suffix.lower() in SUPPORTED
               and p.stem != 'current' and not p.stem.endswith('-thumb')]
-    return [(p.stem.replace('_', ' ').replace('-', ' · '), p)
+    names = {
+        'aquarium': 'Йоджи — аквариум',
+        'yoji-school': 'Йоджи — школа',
+        'yoji-train': 'Йоджи — поезд',
+        'tetsuo-rain': 'Тэцуо и Йоджи — дождь',
+    }
+    return [(names.get(p.stem, p.stem.replace('_', ' ').replace('-', ' · ')), p)
             for p in sorted(images, key=lambda path: path.name.casefold())]
 
 
 CHOICES = available_wallpapers()
+
+
+def update_fastfetch_portrait(image):
+    helper = HOME / '.config/niri/scripts/prepare-fastfetch-logo.py'
+    subprocess.run(['python3', str(helper), str(image)], check=False,
+                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
 
 def select_wallpaper():
@@ -55,9 +67,10 @@ if not image.is_file():
 WALLPAPERS.mkdir(parents=True, exist_ok=True)
 CURRENT.unlink(missing_ok=True)
 CURRENT.symlink_to(image)
+update_fastfetch_portrait(image)
 theme_result = subprocess.run([
     'matugen', 'image', str(image), '--config', str(THEME), '--mode', 'dark',
-    '--type', 'scheme-content', '--source-color-index', '1', '--quiet',
+    '--type', 'scheme-content', '--source-color-index', '0', '--quiet',
     '--continue-on-error',
 ], check=False, capture_output=True, text=True)
 if theme_result.returncode != 0:

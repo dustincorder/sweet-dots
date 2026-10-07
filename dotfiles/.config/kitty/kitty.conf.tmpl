@@ -69,3 +69,7 @@ confirm_os_window_close 0
 background_opacity 0.82
 background_blur 1
 include @HOME@/.config/kitty/matugen-colors.conf
+
+# Middle-click a URL to open it; Shift+middle-click keeps primary-selection paste.
+mouse_map middle click ungrabbed mouse_click_url
+mouse_map shift+middle release ungrabbed paste_from_selection

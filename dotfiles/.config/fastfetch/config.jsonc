@@ -1,10 +1,10 @@
 {
   "$schema": "https://github.com/fastfetch-cli/fastfetch/raw/master/doc/json_schema.json",
   "logo": {
-    "type": "builtin",
-    "source": "arch",
+    "type": "file-raw",
+    "source": "@HOME@/.local/share/sweet-dots/fastfetch-portrait.ansi",
     "padding": { "right": 2 },
-    "color": { "1": "#86c8d4", "2": "#b7a9d5" }
+    "printRemaining": false
   },
   "display": { "separator": "  " },
   "modules": [

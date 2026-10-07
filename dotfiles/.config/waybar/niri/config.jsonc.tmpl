@@ -10,8 +10,8 @@
   "passthrough": false,
   "gtk-layer-shell": true,
   "modules-left": ["custom/launcher", "niri/workspaces"],
-  "modules-center": ["custom/date-ru"],
-  "modules-right": ["tray", "network", "custom/bluetooth", "pulseaudio", "cpu", "memory", "custom/wallpaper", "custom/language"],
+  "modules-center": [],
+  "modules-right": ["cpu", "memory", "tray", "network", "custom/bluetooth", "custom/language", "pulseaudio", "custom/wallpaper", "custom/power", "custom/date-ru"],
 
   "custom/launcher": {
     "format": "󰍜",
@@ -64,8 +64,8 @@
     "format-muted": "󰝟",
     "format-icons": {"default": ["󰕿", "󰖀", "󰕾"]},
     "on-click": "@HOME@/.config/niri/scripts/toggle-notifications.sh",
-    "on-click-right": "pavucontrol",
     "on-click-right": "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle",
+    "on-click-middle": "pavucontrol",
     "scroll-step": 5
   },
   "tray": {
@@ -84,6 +84,12 @@
     "return-type": "json",
     "interval": 1,
     "on-click": "niri msg action switch-layout next"
+  },
+  "custom/power": {
+    "format": "⏻",
+    "tooltip": true,
+    "tooltip-format": "Питание · блокировка, выход, сон, перезапуск, выключение",
+    "on-click": "wlogout --protocol layer-shell --layout @HOME@/.config/wlogout/layout --css @HOME@/.config/wlogout/style.css --buttons-per-row 3 --column-spacing 12 --row-spacing 12 --margin 24"
   },
   "custom/date-ru": {
     "exec": "python3 @HOME@/.config/niri/scripts/date-ru.py",

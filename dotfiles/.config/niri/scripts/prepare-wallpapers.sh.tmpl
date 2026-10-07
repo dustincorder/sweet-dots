@@ -1,0 +1,49 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Build a small, dark wallpaper pack from a local Sweet Pool installation.
+# The CG files remain on the user's machine and are not shipped with the dots.
+cg_root="${SWEET_POOL_CG_DIR:-/mnt/disk/sweet pool/assets/cg}"
+wallpaper_dir="${HOME}/.local/share/niri/wallpapers"
+portrait_dir="${HOME}/.local/share/sweet-dots"
+
+make_wallpaper() {
+    local source="$1" destination="$2" brightness="$3"
+    if [[ ! -f "$source" ]]; then
+        printf 'Missing source image: %s\n' "$source" >&2
+        return 1
+    fi
+
+    magick "$source" \
+        -filter Lanczos \
+        -resize '2732x1536^' \
+        -gravity center -extent 2732x1536 \
+        -modulate 82,90,100 \
+        -channel RGB -evaluate multiply "$brightness" +channel \
+        -quality 92 "$destination"
+}
+
+mkdir -p "$wallpaper_dir" "$portrait_dir"
+make_wallpaper "$cg_root/ev/ev0701_蓉司_電車でウォークマン聴くL.jpg" \
+    "$wallpaper_dir/yoji-train.jpg" 0.72
+make_wallpaper "$cg_root/ev/ev3501_睦_犬と散歩するL.jpg" \
+    "$wallpaper_dir/makoto-dog-walk.jpg" 0.86
+make_wallpaper "$cg_root/ev/ev7201_哲雄_黒猫に餌をやるL.jpg" \
+    "$wallpaper_dir/tetsuo-black-cat.jpg" 0.72
+make_wallpaper "$cg_root/ev/ev0501_善弥_校門を揺らすL.jpg" \
+    "$wallpaper_dir/zenya-shopping.jpg" 0.72
+make_wallpaper "$cg_root/ev/ev1301_睦_蓉司とジャンクフード食べるL.jpg" \
+    "$wallpaper_dir/makoto-junk-food.jpg" 0.72
+make_wallpaper "$cg_root/ev/ev6101_哲雄_蓉司と相合傘l.jpg" \
+    "$wallpaper_dir/tetsuo-rain.jpg" 0.82
+make_wallpaper "$cg_root/ev/ev4201_善弥_トイレで痛みに震えるL.jpg" \
+    "$wallpaper_dir/zenya-bruised.jpg" 0.80
+
+magick "$cg_root/st/st蓉司_制服_normal.png" \
+    -trim +repage -resize '390x500>' \
+    -background '#101820' -gravity center -extent 420x500 \
+    "$portrait_dir/fastfetch-portrait.png"
+python3 "$(dirname "$0")/prepare-fastfetch-logo.py" "$wallpaper_dir/yoji-train.jpg"
+
+printf 'Created seven wallpapers in %s\n' "$wallpaper_dir"
+printf 'Created the Fastfetch portrait in %s\n' "$portrait_dir"

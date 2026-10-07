@@ -1,0 +1,68 @@
+#!/usr/bin/env python3
+"""Render the character matching the selected Sweet Pool wallpaper for Fastfetch."""
+from pathlib import Path
+import os
+import subprocess
+import sys
+
+HOME = Path.home()
+CG = Path(os.environ.get('SWEET_POOL_CG_DIR', '/mnt/disk/sweet pool/assets/cg'))
+WALLPAPER = Path(sys.argv[1]) if len(sys.argv) > 1 else None
+OUTPUT = HOME / '.local/share/sweet-dots'
+PERSONAS = {
+    'yoji': '蓉司',
+    'aquarium': '蓉司',
+    'makoto': '睦',
+    'tetsuo': '哲雄',
+    'zenya': '善弥',
+}
+
+
+def selected_character():
+    stem = WALLPAPER.stem.lower() if WALLPAPER else ''
+    for prefix, name in PERSONAS.items():
+        if prefix in stem:
+            return name
+    return '蓉司'
+
+
+def write_ansi_art(png_path):
+    width, pixel_height = 28, 36
+    raw = subprocess.run([
+        'magick', str(png_path), '-resize', f'{width}x{pixel_height}^',
+        '-gravity', 'center', '-extent', f'{width}x{pixel_height}',
+        '-background', '#101820', '-alpha', 'remove', '-alpha', 'off',
+        '-depth', '8', 'RGB:-',
+    ], check=True, stdout=subprocess.PIPE).stdout
+    pixels = [tuple(raw[i:i + 3]) for i in range(0, len(raw), 3)]
+    rows = []
+    for y in range(0, pixel_height, 2):
+        row = []
+        for x in range(width):
+            top = pixels[y * width + x]
+            bottom = pixels[(y + 1) * width + x]
+            row.append(
+                f'\033[38;2;{top[0]};{top[1]};{top[2]}m'
+                f'\033[48;2;{bottom[0]};{bottom[1]};{bottom[2]}m▀'
+            )
+        rows.append(''.join(row) + '\033[0m')
+    (OUTPUT / 'fastfetch-portrait.ansi').write_text('\n'.join(rows) + '\n')
+
+
+def main():
+    OUTPUT.mkdir(parents=True, exist_ok=True)
+    character = selected_character()
+    source = CG / 'st' / f'st{character}_制服_normal.png'
+    if not source.is_file():
+        return
+    png = OUTPUT / 'fastfetch-portrait.png'
+    subprocess.run([
+        'magick', str(source), '-trim', '+repage', '-resize', '420x500>',
+        '-background', '#101820', '-gravity', 'center', '-extent', '420x500',
+        str(png),
+    ], check=True)
+    write_ansi_art(png)
+
+
+if __name__ == '__main__':
+    main()
