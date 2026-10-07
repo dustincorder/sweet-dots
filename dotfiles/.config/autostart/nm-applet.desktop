@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=NetworkManager Applet
+Exec=nm-applet
+Icon=network-workgroup
+NotShowIn=niri;Niri;
+Terminal=false

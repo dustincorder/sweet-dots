@@ -1,0 +1,142 @@
+#!/usr/bin/env python3
+"""Freeze the focused display, select from that frame, then edit in Swappy."""
+from datetime import datetime
+import json
+from pathlib import Path
+import subprocess
+import sys
+import tempfile
+
+from i18n import tr
+
+
+def selection_bounds(start, end, size, pixels):
+    if start is None or max(abs(end[0] - start[0]), abs(end[1] - start[1])) < 6:
+        return 0, 0, pixels[0], pixels[1]
+    sx, sy = pixels[0] / size[0], pixels[1] / size[1]
+    x0 = max(0, min(pixels[0] - 1, int(min(start[0], end[0]) * sx)))
+    y0 = max(0, min(pixels[1] - 1, int(min(start[1], end[1]) * sy)))
+    x1 = max(x0 + 1, min(pixels[0], round(max(start[0], end[0]) * sx)))
+    y1 = max(y0 + 1, min(pixels[1], round(max(start[1], end[1]) * sy)))
+    return x0, y0, x1 - x0, y1 - y0
+
+
+def select_frame(raw, target):
+    import gi
+    gi.require_version('Gtk', '3.0')
+    gi.require_version('Gdk', '3.0')
+    gi.require_version('GdkPixbuf', '2.0')
+    gi.require_version('GtkLayerShell', '0.1')
+    from gi.repository import Gdk, GdkPixbuf, Gtk, GtkLayerShell as Layer
+    pixbuf = GdkPixbuf.Pixbuf.new_from_file(str(raw))
+    root = Gtk.Window()
+    Layer.init_for_window(root)
+    Layer.set_namespace(root, 'sweet-dots-capture')
+    Layer.set_layer(root, Layer.Layer.OVERLAY)
+    Layer.set_exclusive_zone(root, -1)
+    Layer.set_keyboard_mode(root, Layer.KeyboardMode.EXCLUSIVE)
+    for edge in (Layer.Edge.TOP, Layer.Edge.BOTTOM, Layer.Edge.LEFT, Layer.Edge.RIGHT):
+        Layer.set_anchor(root, edge, True)
+    root.connect('destroy', Gtk.main_quit)
+    root.connect('key-press-event', lambda widget, event: widget.destroy() if event.keyval == Gdk.KEY_Escape else False)
+    area = Gtk.DrawingArea()
+    overlay = Gtk.Overlay()
+    overlay.add(area)
+    hint = Gtk.Label(label=tr('capture_hint'))
+    hint.set_halign(Gtk.Align.CENTER)
+    hint.set_valign(Gtk.Align.START)
+    hint.set_margin_top(32)
+    provider = Gtk.CssProvider()
+    provider.load_from_data(b'label { background: rgba(0,0,0,0.8); color: white; padding: 12px 18px; border-radius: 12px; }')
+    hint.get_style_context().add_provider(provider, Gtk.STYLE_PROVIDER_PRIORITY_USER)
+    overlay.add_overlay(hint)
+    overlay.set_overlay_pass_through(hint, True)
+    root.add(overlay)
+    area.add_events(Gdk.EventMask.BUTTON_PRESS_MASK | Gdk.EventMask.BUTTON_RELEASE_MASK | Gdk.EventMask.POINTER_MOTION_MASK)
+    start, end, chosen = None, None, False
+
+    def draw(widget, cr):
+        width, height = widget.get_allocated_width(), widget.get_allocated_height()
+        cr.save()
+        cr.scale(width / pixbuf.get_width(), height / pixbuf.get_height())
+        Gdk.cairo_set_source_pixbuf(cr, pixbuf, 0, 0)
+        cr.paint()
+        cr.restore()
+        cr.set_source_rgba(0, 0, 0, 0.3)
+        cr.paint()
+        if start and end:
+            x, y = min(start[0], end[0]), min(start[1], end[1])
+            w, h = abs(end[0] - start[0]), abs(end[1] - start[1])
+            cr.save()
+            cr.rectangle(x, y, w, h)
+            cr.clip()
+            cr.scale(width / pixbuf.get_width(), height / pixbuf.get_height())
+            Gdk.cairo_set_source_pixbuf(cr, pixbuf, 0, 0)
+            cr.paint()
+            cr.restore()
+            cr.set_source_rgb(1, 1, 1)
+            cr.set_line_width(2)
+            cr.rectangle(x, y, w, h)
+            cr.stroke()
+        return False
+
+    def press(widget, event):
+        nonlocal start, end
+        if event.button == 1:
+            start = end = (event.x, event.y)
+            widget.queue_draw()
+        return True
+
+    def motion(widget, event):
+        nonlocal end
+        if start:
+            end = (event.x, event.y)
+            widget.queue_draw()
+        return True
+
+    def release(widget, event):
+        nonlocal chosen
+        if event.button != 1:
+            return True
+        bounds = selection_bounds(start, (event.x, event.y),
+                                  (widget.get_allocated_width(), widget.get_allocated_height()),
+                                  (pixbuf.get_width(), pixbuf.get_height()))
+        pixbuf.new_subpixbuf(*bounds).savev(str(target), 'png', [], [])
+        chosen = True
+        root.destroy()
+        return True
+
+    area.connect('draw', draw)
+    area.connect('button-press-event', press)
+    area.connect('motion-notify-event', motion)
+    area.connect('button-release-event', release)
+    root.show_all()
+    Gtk.main()
+    return chosen
+
+
+def main():
+    mode = sys.argv[1] if len(sys.argv) > 1 else 'region'
+    if mode not in ('region', 'full'):
+        raise SystemExit('Usage: capture.py region|full')
+    output = json.loads(subprocess.check_output(['niri', 'msg', '--json', 'focused-output'], text=True))
+    if output is None:
+        return 1
+    pictures = Path(subprocess.check_output(['xdg-user-dir', 'PICTURES'], text=True).strip()) / 'Screenshots'
+    pictures.mkdir(parents=True, exist_ok=True)
+    saved = pictures / f'Screenshot-{datetime.now():%Y-%m-%d_%H-%M-%S-%f}.png'
+    with tempfile.TemporaryDirectory(prefix='sweet-dots-capture-') as directory:
+        raw = Path(directory) / 'frame.png'
+        cropped = Path(directory) / 'crop.png'
+        subprocess.run(['grim', '-o', output['name'], str(raw)], check=True)
+        if mode == 'region' and not select_frame(raw, cropped):
+            return 0
+        subprocess.run(['swappy', '-f', str(cropped if mode == 'region' else raw), '-o', str(saved)], check=True)
+        if saved.is_file():
+            with saved.open('rb') as image:
+                subprocess.run(['wl-copy', '--type', 'image/png'], stdin=image, check=True)
+    return 0
+
+
+if __name__ == '__main__':
+    raise SystemExit(main())

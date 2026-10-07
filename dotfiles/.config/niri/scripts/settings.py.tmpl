@@ -2,6 +2,7 @@
 """Sweet Dots settings GUI and renderer for Niri, Waybar, and SwayNC."""
 import argparse
 import json
+import os
 from pathlib import Path
 import re
 import shutil
@@ -42,7 +43,7 @@ TEXT = {
     'ru': ('Русский', 'Русский'), 'en': ('English', 'English'), 'workspaces': ('Рабочие места', 'Workspaces'),
     'clock_date': ('Показывать короткую дату', 'Show short date'), 'apply': ('Применить', 'Apply'),
     'saved': ('Настройки сохранены', 'Settings saved'), 'ok': ('Панель и Niri обновлены.', 'Dock and Niri updated.'),
-    'error': ('Не удалось применить настройки', 'Could not apply settings'), 'height': ('Высота панели', 'Dock height'),
+    'error': ('Не удалось применить настройки', 'Could not apply settings'), 'height': ('Высота панели', 'Dock height'), 'panel_size': ('Высота панели', 'Panel height'),
     'widget_size': ('Размер виджетов', 'Widget size'), 'position': ('Положение панели', 'Dock position'),
     'top': ('Сверху', 'Top'), 'bottom': ('Снизу', 'Bottom'), 'small': ('Компактный', 'Compact'),
     'medium': ('Обычный', 'Standard'), 'large': ('Крупный', 'Large'), 'general': ('Основное', 'General'),
@@ -54,6 +55,8 @@ TEXT = {
     'label': ('Название', 'Label'), 'key': ('Комбинация клавиш', 'Key combination'),
     'command': ('Команда', 'Command'), 'icon': ('Иконка (необязательно)', 'Icon (optional)'),
     'invalid': ('Заполни комбинацию клавиш и команду.', 'Enter a key combination and command.'),
+    'cancel': ('Отмена', 'Cancel'), 'saving': ('Применение…', 'Applying…'),
+    'duplicate_key': ('Эта комбинация уже используется.', 'This key combination is already in use.'),
     'hint': ('Лаунчер приложений: Win+Space', 'App launcher: Win+Space'),
 }
 
@@ -119,16 +122,16 @@ def render(template_name, prefs):
     groups = {side: [item for item in items if item in allowed] for side, items in groups.items()}
     all_items = [item for side in groups.values() for item in side]
     if len(all_items) != len(set(all_items)):
-        raise ValueError('Каждый виджет можно добавить на панель только один раз.')
+        raise ValueError('Каждый виджет можно добавить только один раз.' if lang == 'ru' else 'Each widget can only be added once.')
     for n, shortcut in enumerate(prefs['shortcuts'], 1):
         shortcut['key'] = str(shortcut.get('key', '')).strip()
         shortcut['label'] = str(shortcut.get('label', '')).strip()
         shortcut['command'] = str(shortcut.get('command', '')).strip()
         if not shortcut['label'] or not shortcut['command'] or not re.fullmatch(r'[A-Za-z0-9_+\-]+', shortcut['key']):
-            raise ValueError(f'Некорректный шорткат №{n}')
+            raise ValueError(f'Некорректный шорткат №{n}' if lang == 'ru' else f'Invalid shortcut #{n}')
     shortcut_keys = [item['key'].lower() for item in prefs['shortcuts']]
     if len(shortcut_keys) != len(set(shortcut_keys)):
-        raise ValueError('Комбинации клавиш не должны повторяться.')
+        raise ValueError(tr('duplicate_key', lang))
     definitions = []
     for n, shortcut in enumerate(prefs['shortcuts'], 1):
         module = f'custom/user-shortcut-{n}'
@@ -141,15 +144,29 @@ def render(template_name, prefs):
     sizes = {'small': 32, 'medium': 40, 'large': 48}
     widget_sizes = {'small': (11, 25), 'medium': (13, 31), 'large': (15, 38)}
     font_size, button_size = widget_sizes[prefs['widget_size']]
+    workspace_ids = [f'custom/workspace-{i}' for i in range(1, count + 1)]
+    workspace_defs = {'group/workspaces': {'orientation': 'horizontal', 'modules': workspace_ids}}
+    for i, module in enumerate(workspace_ids, 1):
+        workspace_defs[module] = {
+            'exec': f'python3 {HOME}/.config/niri/scripts/workspace-status.py {i}',
+            'return-type': 'json', 'restart-interval': 1, 'tooltip': False, 'exec-on-event': False,
+            'on-click': f'niri msg action focus-workspace "{i}"',
+            'on-scroll-up': 'niri msg action focus-workspace-up',
+            'on-scroll-down': 'niri msg action focus-workspace-down',
+        }
+    groups = {side: ['group/workspaces' if item == 'niri/workspaces' else item for item in items]
+              for side, items in groups.items()}
     values = {
         chr(64) + 'HOME' + chr(64): str(HOME), '@WORKSPACE_DECLARATIONS@': '\n'.join(f'workspace "{i}"' for i in range(1, count + 1)),
-        '@WORKSPACE_BINDS@': '\n'.join(keybinds), '@WORKSPACE_LIST@': ', '.join(json.dumps(str(i)) for i in range(1, count + 1)),
+        '@WORKSPACE_WIDGET_DEFS@': ',\n  '.join(f'{json.dumps(key)}: {json.dumps(value, ensure_ascii=False)}' for key, value in workspace_defs.items()) + ',', '@WORKSPACE_BINDS@': '\n'.join(keybinds), '@WORKSPACE_LIST@': ', '.join(json.dumps(str(i)) for i in range(1, count + 1)),
         '@CUSTOM_BINDS@': '\n'.join(custom_keybinds),
         '@MODULES_LEFT@': json.dumps(groups['left'], ensure_ascii=False), '@MODULES_CENTER@': json.dumps(groups['center'], ensure_ascii=False),
         '@MODULES_RIGHT@': json.dumps(groups['right'], ensure_ascii=False), '@USER_WIDGET_DEFS@': (',\n  '.join(definitions) + ',') if definitions else '',
         '@PANEL_POSITION@': prefs['position'], '@PANEL_HEIGHT@': str(sizes[prefs['panel_size']]),
         '@PANEL_MARGIN_TOP@': '7' if prefs['position'] == 'top' else '0',
         '@PANEL_MARGIN_BOTTOM@': '7' if prefs['position'] == 'bottom' else '0',
+        '@OVERLAY_MARGIN_TOP@': str(sizes[prefs['panel_size']] + 11) if prefs['position'] == 'top' else '0',
+        '@OVERLAY_MARGIN_BOTTOM@': str(sizes[prefs['panel_size']] + 11) if prefs['position'] == 'bottom' else '0',
         '@PANEL_FONT_SIZE@': str(font_size), '@PANEL_BUTTON_SIZE@': str(button_size),
         '@UI_EMPTY@': 'Новых уведомлений нет' if lang == 'ru' else 'No new notifications',
         '@UI_NOTIFICATIONS@': 'Уведомления' if lang == 'ru' else 'Notifications', '@UI_CLEAR@': 'Очистить' if lang == 'ru' else 'Clear',
@@ -162,7 +179,7 @@ def render(template_name, prefs):
         '@UI_SHUTDOWN@': 'Выключить' if lang == 'ru' else 'Power off', '@UI_APPS@': 'Приложения' if lang == 'ru' else 'Applications',
         '@UI_COMMAND@': 'Команда' if lang == 'ru' else 'Command', '@UI_CLIPBOARD@': 'Буфер обмена' if lang == 'ru' else 'Clipboard',
         '@UI_WALLPAPER@': 'Сменить обои' if lang == 'ru' else 'Change wallpaper',
-        '@UI_NOTIFICATIONS_BUTTON@': 'Уведомления и быстрые настройки' if lang == 'ru' else 'Notifications and quick settings',
+        '@UI_NOTIFICATIONS_BUTTON@': 'Календарь и уведомления' if lang == 'ru' else 'Calendar and notifications',
         '@UI_PASSWORD@': 'Пароль' if lang == 'ru' else 'Password',
         '@FF_SYSTEM@': 'система' if lang == 'ru' else 'system', '@FF_KERNEL@': 'ядро' if lang == 'ru' else 'kernel',
         '@FF_UPTIME@': 'время работы' if lang == 'ru' else 'uptime', '@FF_PACKAGES@': 'пакеты' if lang == 'ru' else 'packages',
@@ -173,7 +190,7 @@ def render(template_name, prefs):
     }
     for key, value in values.items():
         text = text.replace(key, value)
-    leftover = re.findall(r'@(HOME|WORKSPACE_[A-Z_]+|PANEL_[A-Z_]+|MODULES_[A-Z_]+|USER_WIDGET_DEFS|CUSTOM_BINDS|UI_[A-Z_]+|POWER_TOOLTIP|FF_[A-Z_]+)@', text)
+    leftover = re.findall(r'@(HOME|WORKSPACE_[A-Z_]+|PANEL_[A-Z_]+|OVERLAY_[A-Z_]+|MODULES_[A-Z_]+|USER_WIDGET_DEFS|CUSTOM_BINDS|UI_[A-Z_]+|POWER_TOOLTIP|FF_[A-Z_]+)@', text)
     if leftover:
         raise ValueError(f'Unexpanded setting in {template_name}: {leftover[0]}')
     return text
@@ -186,16 +203,14 @@ def patch_widget_scale(prefs):
     font_size, button_size = {'small': (11, 25), 'medium': (13, 31), 'large': (15, 38)}[prefs['widget_size']]
     text = css.read_text()
     text, _ = re.subn(r'(^\s*font-size:\s*)\d+(px)', rf'\g<1>{font_size}\2', text, count=1, flags=re.M)
-    text = re.sub(r'(#workspaces button\s*\{[^}]*?min-width:\s*)\d+px', rf'\g<1>{button_size}px', text, count=1, flags=re.S)
+    text = re.sub(r'(#custom-workspace-4\s*\{[^}]*?min-width:\s*)\d+px', rf'\g<1>{button_size}px', text, count=1, flags=re.S)
     power_size = {'small': 15, 'medium': 17, 'large': 20}[prefs['widget_size']]
     text = re.sub(r'(#custom-power\s*\{[^}]*?font-size:\s*)\d+px', rf'\g<1>{power_size}px', text, count=1, flags=re.S)
     text = re.sub(r'\n?/\* sweet-dots-workspace-limit \*/.*?(?=\n|$)', '', text)
     text = re.sub(r'\n?#workspaces button#niri-workspace-(?:3|4|5)\s*\{[^}]*\}', '', text)
-    transient = int(prefs['workspaces']) + 1
-    text += (f'\n/* sweet-dots-workspace-limit */\n'
-             f'#workspaces button#niri-workspace-{transient} '
-             '{ min-width: 0; padding: 0; margin: 0; border: none; font-size: 0; opacity: 0; }\n')
-    css.write_text(text)
+    temporary = css.with_suffix('.css.tmp')
+    temporary.write_text(text)
+    temporary.replace(css)
 
 
 def apply(prefs):
@@ -225,16 +240,11 @@ def apply(prefs):
         temporary.replace(target)
     update_rofi_labels(prefs['language'])
     patch_widget_scale(prefs)
-    subprocess.run(['niri', 'msg', 'action', 'load-config-file'], check=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    reloaded = subprocess.run(['pkill', '-USR2', '-x', 'waybar'], check=False,
-                              stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    if reloaded.returncode != 0:
-        subprocess.Popen(['waybar', '-c', str(HOME / '.config/waybar/niri/config.jsonc'),
-                          '-s', str(HOME / '.config/waybar/niri/style.css')],
-                         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-                         start_new_session=True)
-    subprocess.run(['swaync-client', '--reload-config'], check=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    subprocess.run(['swaync-client', '--reload-css'], check=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    if os.environ.get('NIRI_SOCKET'):
+        subprocess.run(['niri', 'msg', 'action', 'load-config-file'], check=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        subprocess.run(['python3', str(HOME / '.config/niri/scripts/panel.py'), '--reload'], check=False)
+        subprocess.run(['swaync-client', '--reload-config'], check=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        subprocess.run(['swaync-client', '--reload-css'], check=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     return prefs
 
 
@@ -252,324 +262,31 @@ def update_rofi_labels(lang):
 
 def cli_setup(args):
     current = read_settings()
-    current.update({'language': args.language, 'workspaces': args.workspaces, 'panel_size': args.panel_size,
-                    'widget_size': args.widget_size, 'position': args.position})
+    current.update({key: value for key, value in vars(args).items()
+                    if key in current and value is not None})
     apply(current)
     print('Sweet Dots settings saved.')
 
 
 def gui():
-    import tkinter as tk
-    from tkinter import messagebox, ttk
-    prefs = read_settings()
-    root = tk.Tk()
-    lang = tk.StringVar(root, value=prefs['language'])
-    variables = {'clock_date': tk.BooleanVar(root, value=prefs['clock_date'])}
-    root.geometry('850x590')
-    root.minsize(760, 520)
-    palette = {'bg': '#101820', 'surface': '#172832', 'text': '#e4edf2', 'accent': '#254653', 'muted': '#aab8bf'}
-    try:
-        css = (HOME / '.config/niri/swaync/style.css').read_text()
-        def css_color(selector, prop, fallback):
-            match = re.search(re.escape(selector) + r'.*?' + prop + r':\s*(#[0-9a-fA-F]{6})', css, re.S)
-            return match.group(1) if match else fallback
-        palette.update(
-            bg=css_color('.control-center', 'background', palette['bg']),
-            surface=css_color('.widget-buttons-grid', 'background', palette['surface']),
-            text=css_color('.control-center', 'color', palette['text']),
-            accent=css_color('.widget-title > button', 'color', palette['accent']),
-            muted=css_color('.body', 'color', palette['muted']),
-        )
-    except OSError:
-        pass
-    root.configure(bg=palette['bg'])
-    style = ttk.Style(root)
-    style.theme_use('clam')
-    style.configure('.', background=palette['bg'], foreground=palette['text'], font=('Sans', 10))
-    style.configure('TFrame', background=palette['bg'])
-    style.configure('TLabel', background=palette['bg'], foreground=palette['text'])
-    style.configure('TRadiobutton', background=palette['bg'], foreground=palette['text'])
-    style.configure('TCheckbutton', background=palette['bg'], foreground=palette['text'])
-    style.configure('TNotebook', background=palette['bg'], borderwidth=0)
-    style.configure('TNotebook.Tab', background=palette['surface'], foreground=palette['text'], padding=(14, 8))
-    style.map('TNotebook.Tab', background=[('selected', palette['accent'])],
-              foreground=[('selected', palette['bg'])])
-    style.configure('TButton', background=palette['surface'], foreground=palette['text'], padding=(9, 5))
-    style.map('TButton', background=[('active', palette['accent'])],
-              foreground=[('active', palette['bg'])])
-    style.configure('Accent.TButton', background=palette['accent'], foreground=palette['bg'],
-                    padding=(16, 8), font=('Sans', 11, 'bold'))
-    style.map('Accent.TButton', background=[('active', palette['text'])])
-    style.configure('Card.TFrame', background=palette['surface'])
-    style.configure('Card.TLabel', background=palette['surface'], foreground=palette['text'])
-    style.configure('Card.TRadiobutton', background=palette['surface'], foreground=palette['text'])
-    style.configure('Card.TCheckbutton', background=palette['surface'], foreground=palette['text'])
-    style.configure('TCombobox', fieldbackground=palette['surface'], background=palette['surface'], foreground=palette['text'])
-    content = ttk.Frame(root, padding=18)
-    content.pack(fill='both', expand=True)
-    heading = ttk.Label(content, font=('Sans', 16, 'bold'))
-    heading.pack(anchor='w', pady=(0, 12))
-    notebook = ttk.Notebook(content)
-    notebook.pack(fill='both', expand=True)
-    general = ttk.Frame(notebook, padding=18)
-    dock = ttk.Frame(notebook, padding=14)
-    shortcuts_tab = ttk.Frame(notebook, padding=14)
-    notebook.add(general, text='')
-    notebook.add(dock, text='')
-    notebook.add(shortcuts_tab, text='')
-    card = ttk.Frame(general, style='Card.TFrame', padding=16)
-    card.pack(fill='x', pady=(2, 0))
-    card.columnconfigure(1, weight=1)
-
-    language_label = ttk.Label(card, style='Card.TLabel')
-    language_label.grid(row=0, column=0, sticky='w', pady=7)
-    for col, value in enumerate(('ru', 'en'), 1):
-        ttk.Radiobutton(card, style='Card.TRadiobutton', variable=lang, value=value, text=value.upper()).grid(row=0, column=col, sticky='w', padx=8)
-    workspace_label = ttk.Label(card, style='Card.TLabel')
-    workspace_label.grid(row=1, column=0, sticky='w', pady=7)
-    workspace_var = tk.StringVar(value=str(prefs['workspaces']))
-    workspace_combo = ttk.Combobox(card, textvariable=workspace_var, values=('2', '3', '4'), state='readonly', width=9)
-    workspace_combo.grid(row=1, column=1, sticky='w')
-    position_label = ttk.Label(card, style='Card.TLabel')
-    position_label.grid(row=2, column=0, sticky='w', pady=7)
-    selected_values = {'position': prefs['position'], 'panel_size': prefs['panel_size'], 'widget_size': prefs['widget_size']}
-    position_display = tk.StringVar(value=prefs['position'])
-    position_combo = ttk.Combobox(card, textvariable=position_display, values=('top', 'bottom'), state='readonly', width=14)
-    position_combo.grid(row=2, column=1, sticky='w')
-    height_label = ttk.Label(card, style='Card.TLabel')
-    height_label.grid(row=3, column=0, sticky='w', pady=7)
-    panel_display = tk.StringVar(value=prefs['panel_size'])
-    height_combo = ttk.Combobox(card, textvariable=panel_display, values=('small', 'medium', 'large'), state='readonly', width=14)
-    height_combo.grid(row=3, column=1, sticky='w')
-    widget_size_label = ttk.Label(card, style='Card.TLabel')
-    widget_size_label.grid(row=4, column=0, sticky='w', pady=7)
-    widget_display = tk.StringVar(value=prefs['widget_size'])
-    widget_size_combo = ttk.Combobox(card, textvariable=widget_display, values=('small', 'medium', 'large'), state='readonly', width=14)
-    widget_size_combo.grid(row=4, column=1, sticky='w')
-    def sync_choice(choice, variable, reverse):
-        selected_values[choice] = reverse.get(variable.get(), selected_values[choice])
-    height_combo.bind('<<ComboboxSelected>>', lambda *_: sync_choice('panel_size', panel_display, {'Компактный': 'small', 'Обычный': 'medium', 'Крупный': 'large', 'Compact': 'small', 'Standard': 'medium', 'Large': 'large'}))
-    widget_size_combo.bind('<<ComboboxSelected>>', lambda *_: sync_choice('widget_size', widget_display, {'Компактный': 'small', 'Обычный': 'medium', 'Крупный': 'large', 'Compact': 'small', 'Standard': 'medium', 'Large': 'large'}))
-    position_combo.bind('<<ComboboxSelected>>', lambda *_: sync_choice('position', position_display, {'Сверху': 'top', 'Снизу': 'bottom', 'Top': 'top', 'Bottom': 'bottom'}))
-    date_check = ttk.Checkbutton(card, style='Card.TCheckbutton', variable=variables['clock_date'])
-    date_check.grid(row=5, column=0, columnspan=2, sticky='w', pady=7)
-    hint = ttk.Label(card, style='Card.TLabel')
-    hint.grid(row=6, column=0, columnspan=3, sticky='w', pady=(14, 0))
-
-    active_lists = {}
-    available = tk.Listbox(dock, height=14, exportselection=False, bg=palette['surface'], fg=palette['text'], selectbackground=palette['accent'], borderwidth=0, highlightthickness=1, highlightbackground=palette['accent'])
-    ttk.Label(dock, text='').grid(row=0, column=0)
-    available.grid(row=1, column=0, rowspan=3, sticky='nsew', padx=(0, 8))
-    groups = {}
-    for col, side in enumerate(('left', 'center', 'right'), 1):
-        box_frame = ttk.Frame(dock, style='Card.TFrame', padding=6)
-        box_frame.grid(row=1, column=col, sticky='nsew', padx=5)
-        groups[side] = tk.Listbox(box_frame, height=14, exportselection=False, bg=palette['surface'], fg=palette['text'], selectbackground=palette['accent'], borderwidth=0, highlightthickness=1, highlightbackground=palette['accent'])
-        groups[side].pack(fill='both', expand=True)
-        active_lists[side] = groups[side]
-    destination = tk.StringVar(value='right')
-    destination_combo = ttk.Combobox(dock, textvariable=destination, values=('left', 'center', 'right'), state='readonly', width=10)
-    destination_combo.grid(row=4, column=0, sticky='w', pady=8)
-    add_widget_button = ttk.Button(dock)
-    add_widget_button.grid(row=4, column=1, sticky='ew', pady=8)
-    available_label = ttk.Label(dock)
-    available_label.grid(row=0, column=0, sticky='w', pady=(0, 7))
-    group_labels = {side: ttk.Label(dock) for side in active_lists}
-    for col, side in enumerate(active_lists, 1):
-        group_labels[side].grid(row=0, column=col, sticky='w', padx=5, pady=(0, 7))
-    def selected_available():
-        selection = available.curselection()
-        return available.get(selection[0]).split('  ·  ')[0] if selection else None
-    def refresh_widgets():
-        current = {side: [str(widget).split('  ·  ', 1)[0] for widget in groups[side].get(0, 'end')] for side in groups}
-        used = {widget for items in current.values() for widget in items}
-        available.delete(0, 'end')
-        for key, names in WIDGETS.items():
-            if key not in used:
-                available.insert('end', f'{key}  ·  {names[0 if lang.get() == "ru" else 1]}')
-        for index, shortcut in enumerate(shortcut_values, 1):
-            key = f'custom/user-shortcut-{index}'
-            if key not in used:
-                available.insert('end', f'{key}  ·  {shortcut.get("label", "")}')
-        for side in groups:
-            listbox = groups[side]
-            listbox.delete(0, 'end')
-            for widget in current[side]:
-                label = next((f'{widget}  ·  {s[0 if lang.get() == "ru" else 1]}' for key, s in WIDGETS.items() if key == widget), widget)
-                if widget.startswith('custom/user-shortcut-'):
-                    idx = int(widget.rsplit('-', 1)[-1]) - 1
-                    if idx < len(shortcut_values):
-                        label = f'{widget}  ·  {shortcut_values[idx].get("label", "")}'
-                listbox.insert('end', label)
-    def add_widget():
-        key = selected_available()
-        if key:
-            selected_side = next((side for side in groups if destination.get() in {side, tr(side, lang.get())}), 'right')
-            groups[selected_side].insert('end', key)
-            refresh_widgets()
-    add_widget_button.configure(command=add_widget)
-    move_buttons = {}
-    for col, side in enumerate(active_lists, 1):
-        row = ttk.Frame(dock)
-        row.grid(row=4, column=col, sticky='ew', padx=5)
-        def remove(side=side):
-            box = groups[side]
-            sel = box.curselection()
-            if sel:
-                box.delete(sel[0])
-                refresh_widgets()
-        def move(side=side, delta=-1):
-            box = groups[side]
-            sel = box.curselection()
-            if not sel:
-                return
-            i, j = sel[0], max(0, min(box.size() - 1, sel[0] + delta))
-            item = box.get(i).split('  ·  ')[0]
-            box.delete(i)
-            box.insert(j, item)
-            box.selection_set(j)
-            refresh_widgets()
-        up_button = ttk.Button(row, command=lambda side=side: move(side, -1))
-        down_button = ttk.Button(row, command=lambda side=side: move(side, 1))
-        remove_button = ttk.Button(row, command=remove)
-        up_button.pack(side='left', padx=(0, 3)); down_button.pack(side='left', padx=3); remove_button.pack(side='left', padx=3)
-        move_buttons[side] = (up_button, down_button, remove_button)
-    shortcut_values = [dict(s) for s in prefs['shortcuts']]
-    for side in groups:
-        for widget in prefs['groups'].get(side, []):
-            groups[side].insert('end', widget)
-    shortcut_list = tk.Listbox(shortcuts_tab, height=12, exportselection=False, bg=palette['surface'], fg=palette['text'], selectbackground=palette['accent'], selectforeground=palette['bg'], borderwidth=0, highlightthickness=1, highlightbackground=palette['accent'])
-    shortcut_list.pack(fill='both', expand=True, pady=(8, 10))
-    def refresh_shortcuts():
-        shortcut_list.delete(0, 'end')
-        for item in shortcut_values:
-            shortcut_list.insert('end', f'{item.get("key", "")}  ·  {item.get("label", "")}  →  {item.get("command", "")}')
-    def shortcut_editor(item=None):
-        source = item or {'key': '', 'label': '', 'command': '', 'icon': '󰌌'}
-        dialog = tk.Toplevel(root)
-        dialog.title(tr('edit' if item else 'new', lang.get()))
-        dialog.configure(bg=palette['surface'])
-        fields = {}
-        for row, key in enumerate(('label', 'key', 'command', 'icon')):
-            ttk.Label(dialog, text=tr(key, lang.get()), style='Card.TLabel').grid(row=row, column=0, sticky='w', padx=12, pady=7)
-            fields[key] = tk.StringVar(value=source.get(key, ''))
-            ttk.Entry(dialog, textvariable=fields[key], width=42).grid(row=row, column=1, padx=12, pady=7)
-        def accept():
-            value = {key: var.get().strip() for key, var in fields.items()}
-            if not value['label'] or not value['command'] or not re.fullmatch(r'[A-Za-z0-9_+\-]+', value['key']):
-                messagebox.showerror(tr('error', lang.get()), tr('invalid', lang.get()), parent=dialog)
-                return
-            if item is None:
-                shortcut_values.append(value)
-                # Newly added shortcut is placed at the end of the right side.
-                groups['right'].insert('end', f'custom/user-shortcut-{len(shortcut_values)}')
-            else:
-                item.update(value)
-            refresh_shortcuts()
-            refresh_widgets()
-            dialog.destroy()
-        ttk.Button(dialog, text=tr('apply', lang.get()), style='Accent.TButton', command=accept).grid(row=4, column=1, sticky='e', padx=12, pady=12)
-    shortcut_buttons = ttk.Frame(shortcuts_tab)
-    shortcut_buttons.pack(anchor='e')
-    new_button = ttk.Button(shortcut_buttons, command=lambda: shortcut_editor())
-    new_button.pack(side='left', padx=4)
-    edit_button = ttk.Button(shortcut_buttons)
-    edit_button.pack(side='left', padx=4)
-    delete_button = ttk.Button(shortcut_buttons)
-    delete_button.pack(side='left', padx=4)
-    def edit_selected():
-        sel = shortcut_list.curselection()
-        if sel:
-            shortcut_editor(shortcut_values[sel[0]])
-    def delete_selected():
-        sel = shortcut_list.curselection()
-        if not sel:
-            return
-        index = sel[0]
-        shortcut_values.pop(index)
-        for side in groups:
-            old = [groups[side].get(n).split('  ·  ')[0] for n in range(groups[side].size())]
-            groups[side].delete(0, 'end')
-            for item in old:
-                match = re.fullmatch(r'custom/user-shortcut-(\d+)', item)
-                if match:
-                    number = int(match.group(1))
-                    if number == index + 1:
-                        continue
-                    if number > index + 1:
-                        item = f'custom/user-shortcut-{number - 1}'
-                groups[side].insert('end', item)
-        refresh_shortcuts()
-    edit_button.configure(command=edit_selected)
-    delete_button.configure(command=delete_selected)
-    footer = ttk.Frame(content)
-    footer.pack(fill='x', pady=(12, 0))
-    apply_button = ttk.Button(footer, style='Accent.TButton', command=lambda: None)
-    apply_button.pack(side='right')
-
-    def refresh_labels(*_):
-        current = lang.get()
-        root.title(tr('name', current)); heading.configure(text=tr('name', current))
-        notebook.tab(general, text=tr('general', current)); notebook.tab(dock, text=tr('dock', current)); notebook.tab(shortcuts_tab, text=tr('shortcuts', current))
-        language_label.configure(text=tr('language', current)); workspace_label.configure(text=tr('workspaces', current))
-        position_label.configure(text=tr('position', current)); height_label.configure(text=tr('height', current)); widget_size_label.configure(text=tr('widget_size', current))
-        position_combo.configure(values=(tr('top', current), tr('bottom', current)), state='readonly')
-        position_combo.set(tr(selected_values['position'], current))
-        height_combo.configure(values=tuple(tr(k, current) for k in ('small', 'medium', 'large')))
-        widget_size_combo.configure(values=tuple(tr(k, current) for k in ('small', 'medium', 'large')))
-        height_combo.set(tr(selected_values['panel_size'], current)); widget_size_combo.set(tr(selected_values['widget_size'], current))
-        date_check.configure(text=tr('clock_date', current)); hint.configure(text=tr('hint', current))
-        available_label.configure(text=tr('available', current)); add_widget_button.configure(text=tr('add', current))
-        for side, label in group_labels.items(): label.configure(text=tr(side, current))
-        current_side = next((side for side in groups if destination.get() in {side, tr(side, current)}), 'right')
-        destination_combo.configure(values=tuple(tr(s, current) for s in ('left', 'center', 'right')))
-        destination_combo.set(tr(current_side, current))
-        for side, buttons in move_buttons.items():
-            buttons[0].configure(text=tr('up', current)); buttons[1].configure(text=tr('down', current)); buttons[2].configure(text=tr('remove', current))
-        new_button.configure(text=tr('new', current)); edit_button.configure(text=tr('edit', current)); delete_button.configure(text=tr('delete', current))
-        apply_button.configure(text=tr('apply', current))
-        refresh_widgets(); refresh_shortcuts()
-
-    def save():
-        current = lang.get()
-        target_side = destination.get()
-        try:
-            groups_value = {side: [item.split('  ·  ')[0] for item in groups[side].get(0, 'end')] for side in groups}
-            panel_size_value = selected_values['panel_size']
-            widget_size_value = selected_values['widget_size']
-            position_value = selected_values['position']
-            apply({'language': current, 'workspaces': int(workspace_var.get()), 'clock_date': variables['clock_date'].get(),
-                   'panel_size': panel_size_value, 'widget_size': widget_size_value, 'position': position_value,
-                   'groups': groups_value, 'shortcuts': shortcut_values})
-        except Exception as exc:
-            messagebox.showerror(tr('error', current), str(exc), parent=root)
-            return
-        messagebox.showinfo(tr('saved', current), tr('ok', current), parent=root)
-
-    apply_button.configure(command=save)
-    lang.trace_add('write', refresh_labels)
-    refresh_labels()
-    # Convert visible translated combobox labels to internal values before saving.
-    root.mainloop()
+    from settings_gui import run
+    run()
 
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--setup', action='store_true')
-    parser.add_argument('--language', choices=('ru', 'en'), default='ru')
-    parser.add_argument('--workspaces', type=int, choices=(2, 3, 4), default=2)
-    parser.add_argument('--panel-size', choices=('small', 'medium', 'large'), default='medium')
-    parser.add_argument('--widget-size', choices=('small', 'medium', 'large'), default='medium')
-    parser.add_argument('--position', choices=('top', 'bottom'), default='top')
+    parser.add_argument('--language', choices=('ru', 'en'))
+    parser.add_argument('--workspaces', type=int, choices=(2, 3, 4))
+    parser.add_argument('--panel-size', choices=('small', 'medium', 'large'))
+    parser.add_argument('--widget-size', choices=('small', 'medium', 'large'))
+    parser.add_argument('--position', choices=('top', 'bottom'))
     parser.add_argument('--refresh-style', action='store_true')
     args = parser.parse_args()
     if args.refresh_style:
         patch_widget_scale(read_settings())
     elif args.setup:
-        prefs = read_settings()
-        prefs.update({'language': args.language, 'workspaces': args.workspaces, 'panel_size': args.panel_size,
-                      'widget_size': args.widget_size, 'position': args.position})
-        apply(prefs)
+        cli_setup(args)
     else:
         gui()
 

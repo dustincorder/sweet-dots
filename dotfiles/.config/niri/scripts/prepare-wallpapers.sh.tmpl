@@ -3,7 +3,7 @@ set -euo pipefail
 
 # Build a small, dark wallpaper pack from a local Sweet Pool installation.
 # The CG files remain on the user's machine and are not shipped with the dots.
-cg_root="${SWEET_POOL_CG_DIR:-/mnt/disk/sweet pool/assets/cg}"
+cg_root="${SWEET_POOL_CG_DIR:?Set SWEET_POOL_CG_DIR to the local game CG directory}"
 wallpaper_dir="${HOME}/.local/share/niri/wallpapers"
 portrait_dir="${HOME}/.local/share/sweet-dots"
 

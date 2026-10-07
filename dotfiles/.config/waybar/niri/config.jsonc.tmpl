@@ -15,13 +15,8 @@
   "modules-right": @MODULES_RIGHT@,
   @USER_WIDGET_DEFS@
 
-  "niri/workspaces": {
-    "format": "{index}",
-    "persistent-workspaces": {"*": [@WORKSPACE_LIST@]},
-    "on-click": "activate",
-    "on-scroll-up": "focus-workspace-up",
-    "on-scroll-down": "focus-workspace-down"
-  },
+  @WORKSPACE_WIDGET_DEFS@
+
   "niri/window": {
     "format": "{title}",
     "max-length": 40,
@@ -43,21 +38,21 @@
     "format-ethernet": "󰈀",
     "format-disconnected": "󰤭",
     "tooltip-format": "{ifname}: {ipaddr}",
-    "on-click": "@HOME@/.config/niri/scripts/toggle-notifications.sh",
+    "on-click": "python3 @HOME@/.config/niri/scripts/applets.py network",
     "on-click-right": "nm-connection-editor"
   },
   "custom/bluetooth": {
     "exec": "@HOME@/.config/niri/scripts/bluetooth-status.sh",
     "return-type": "json",
     "interval": 8,
-    "on-click": "@HOME@/.config/niri/scripts/toggle-notifications.sh",
+    "on-click": "python3 @HOME@/.config/niri/scripts/applets.py bluetooth",
     "on-click-right": "blueman-manager"
   },
   "pulseaudio": {
     "format": "{icon} {volume}%",
     "format-muted": "󰝟",
     "format-icons": {"default": ["󰕿", "󰖀", "󰕾"]},
-    "on-click": "@HOME@/.config/niri/scripts/toggle-notifications.sh",
+    "on-click": "python3 @HOME@/.config/niri/scripts/applets.py audio",
     "on-click-right": "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle",
     "on-click-middle": "pavucontrol",
     "scroll-step": 5
@@ -65,8 +60,7 @@
   "tray": {
     "icon-size": 16,
     "spacing": 8,
-    "show-passive-items": true,
-    "ignored-items": ["nm-applet", "blueman-applet", "blueman-tray", "nm_applet"]
+    "show-passive-items": false
   },
   "custom/notifications": {
     "format": "󰂚",

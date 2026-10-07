@@ -1,0 +1,7 @@
+[Default]
+show_panel=true
+early_exit=false
+auto_save=false
+line_size=4
+text_size=20
+paint_mode=brush

@@ -1,11 +1,12 @@
 * { font-family: "SF Pro Display", "Inter", "Noto Sans", "Symbols Nerd Font"; font-size: 13px; }
 button { font-family: "SF Pro Display", "Symbols Nerd Font", "Noto Sans"; }
-window, .control-center, .notification-popups { background: {{colors.surface.dark.hex}}; color: {{colors.on_surface.dark.hex}}; }
+window, .notification-popups { background: transparent; }
 .notification-popups { padding: 10px; }
 .control-center {
+  margin: 0;
   background: {{colors.surface.dark.hex}};
   border: 1px solid {{colors.outline_variant.dark.hex}};
-  border-radius: 22px;
+  border-radius: 16px;
   color: {{colors.on_surface.dark.hex}};
   padding: 14px;
 }
@@ -63,3 +64,5 @@ window, .control-center, .notification-popups { background: {{colors.surface.dar
 }
 .widget-calendar calendar:selected { background: {{colors.primary_container.dark.hex}}; color: {{colors.on_primary_container.dark.hex}}; border-radius: 8px; }
 .widget-calendar calendar:indeterminate { color: {{colors.outline.dark.hex}}; }
+
+.control-center button { border-radius: 10px; box-shadow: none; }

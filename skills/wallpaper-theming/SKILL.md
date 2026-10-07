@@ -5,15 +5,20 @@ color, lock-screen backdrop.
 
 ## Chain (`scripts/wallpaper.py`)
 
-pick (rofi, thumbs) → `current.jpg` symlink → `prepare-fastfetch-logo.py`
-(PNG portrait) → `matugen image <wp> --mode dark --type scheme-content`
-→ `settings.py --refresh-style` → reload niri + `swaync-client
---reload-css` + waybar (`pkill -USR2`).
+pick (rofi, thumbs) → Matugen (palette, restore old outputs on failure)
+→ awww + `current.jpg` → transparent PNG fastfetch portrait
+→ `settings.py --refresh-style` → niri/SwayNC reload + `panel.py --reload`.
+
+Matugen also renders `niri/theme.json` to `sweet-dots/theme.json` for GTK
+settings and applets. Theme outputs must succeed together before reload.
+Portrait sprites are installed from the bundled approved assets; an
+explicit `SWEET_POOL_CG_DIR` can override them. Never hardcode a background
+color or local game directory. Palette outputs/portraits remain local.
+
 
 ## Do
 
-- Test with any image dir; keep SOURCES out of git (`wallpapers/*`
-  ignored). The optional pack builders (`prepare-wallpapers.sh`)
+- Test with any image dir; keep SOURCES out of git (generated assets stay local). The optional pack builders (`prepare-wallpapers.sh`)
   take an env-overridable source dir — never hardcode one.
 - If the palette collapses (near-black / tinted), adjust the
   `source-color-index` / seed choice in `matugen/config.toml.tmpl`,
@@ -28,5 +33,5 @@ pick (rofi, thumbs) → `current.jpg` symlink → `prepare-fastfetch-logo.py`
 
 ## Don't
 
-- Commit images, portraits, or kudzu `.ansi` artifacts.
+- Commit generated portraits or `.ansi` artifacts; approved bundled sources are allowed.
 - Skip the reload chain — a half-reloaded theme looks like a theming bug.

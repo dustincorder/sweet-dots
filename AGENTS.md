@@ -6,7 +6,8 @@ the settings GUI. Read this file first; do not re-explore the tree.
 
 ## Map (all paths relative to repo root)
 
-- `install.sh` — copy + backup + `--setup` render. Only does `@HOME@`
+- `install.sh` — GitHub update check + overwrite consent + backup + `--setup` render;
+  preserves panel preferences, seeds bundled wallpapers and portrait sprites. Only does `@HOME@`
   substitution. Never add other placeholders here.
 - `dotfiles/.config/niri/config.kdl.tmpl` — entry point, includes
   `common.kdl`, adds polkit agent + hypridle + `Mod+L` lock.
@@ -20,7 +21,7 @@ the settings GUI. Read this file first; do not re-explore the tree.
   matugen `{{colors...}}`; `visuals.kdl.tmpl` is its last rendered output.
   Same pattern for waybar `style*.css.tmpl`, rofi `niri*.rasi.tmpl`,
   kitty `*template.conf.tmpl`, alacritty `matugen-colors.template.toml.tmpl`.
-- `dotfiles/.config/niri/scripts/settings.py.tmpl` — THE renderer + Tk GUI.
+- `dotfiles/.config/niri/scripts/settings.py.tmpl` — THE renderer + GTK GUI.
   Reads templates from `$HOME/.local/share/sweet-dots/templates/`
   (populated by `install.sh`, note the renamed files), writes deployed
   configs + `$HOME/.config/sweet-dots/settings.json`. See
@@ -28,13 +29,26 @@ the settings GUI. Read this file first; do not re-explore the tree.
   or `settings.py`, then re-render.
 - `dotfiles/.config/niri/scripts/` — `wallpaper.py` (rofi picker + matugen
   + fastfetch portrait + reload), `i18n.py` + `clock.py` + `media-status.py`
-  (waybar JSON providers), `capture.sh` (grim freeze → satty annotate),
+  (waybar JSON providers), `capture.sh` (grim freeze → click/drag selector → swappy annotate),
   `record-toggle.sh` (wf-recorder toggle), `clipboard-menu.sh`
   (cliphist + rofi), `toggle-notifications.sh` (swaync panel),
   `prepare-wallpapers.sh` / `prepare-fastfetch-logo.py` (optional local
-  pack builders, need user-supplied sources — never commit outputs).
+  pack builders: wallpapers need user-supplied sources; portraits use bundled
+  sprites by default — never commit generated outputs).
+- `dotfiles/.config/niri/scripts/{desktop_ui,settings_gui,applets}.py.tmpl` —
+  shared GTK3 styling, settings editor and separate network/Bluetooth/audio overlays.
+  `theme.json.tmpl` is Matugen's palette source; its output is
+  `$HOME/.config/sweet-dots/theme.json`.
+- `dotfiles/.config/niri/scripts/panel.py.tmpl` — one supervised Waybar per user,
+  bounded crash recovery and `$XDG_STATE_HOME/sweet-dots/waybar.log`.
+  Stops duplicate presentation applets in Niri only; autostart overrides under
+  `dotfiles/.config/autostart/` exclude Niri without disabling other desktops.
+- `dotfiles/.config/niri/scripts/{workspace-status,capture}.py.tmpl` — Niri IPC
+  workspace state and frozen-frame selection (click = focused display, drag = region,
+  Escape = cancel); `dotfiles/.config/swappy/config` keeps the editor toolbar visible.
+- `tests/test_desktop.py` — isolated renderer, reload, capture and theme regression checks.
 - `dotfiles/.config/waybar/niri/` — panel config template + styles.
-- `dotfiles/.config/niri/swaync/` — notification center + quick settings.
+- `dotfiles/.config/niri/swaync/` — calendar + notifications + media.
 - `dotfiles/.config/matugen/config.toml.tmpl` — wallpaper → palette wiring.
 - `dotfiles/.config/{kitty,alacritty,fastfetch,wlogout}/` — terminal colors,
   portrait logo, power menu. `hyprlock.conf.tmpl` / `hypridle.conf.tmpl` —
@@ -91,12 +105,12 @@ before improvising:
 
 ## Panel order + shortcuts
 
-Default panel: configured workspaces left; hide only Niri's transient
-`N+1` creation slot based on the selected 2/3/4 count. Clock centered
+Default panel: exactly the configured 2/3/4 named workspace buttons left,
+rendered as `group/workspaces` with custom modules (released Waybar support). Clock centered
 with the recording indicator next to it (click → notification center),
 then tray + keyboard layout, network + Bluetooth
-+ volume, then power on the right. Network/Bluetooth/volume clicks open
-the SwayNC panel; right-clicks open the native editors. Clipboard is keyboard-only
++ volume, then power on the right. Network/Bluetooth/volume clicks open separate GTK layer-shell overlays;
+right-clicks open native editors (audio: mute; middle-click: mixer). Clipboard is keyboard-only
 (`Mod+V`, no panel button); settings open on `Mod+Shift+S`.
 
 ## First steps for a task

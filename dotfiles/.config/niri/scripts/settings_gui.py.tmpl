@@ -1,0 +1,303 @@
+#!/usr/bin/env python3
+"""GTK settings editor; all writes go through the settings renderer."""
+import copy
+import re
+
+from desktop_ui import Gtk, async_call, box, button, label, style
+import settings
+
+
+def run():
+    prefs = copy.deepcopy(settings.read_settings())
+    root = Gtk.Window()
+    root.set_default_size(960, 700)
+    root.get_style_context().add_class('sweet-dots')
+    root.connect('destroy', Gtk.main_quit)
+    style()
+    content = box()
+    content.set_border_width(24)
+    root.add(content)
+    status = label('', 'muted')
+    labels = []
+
+    def text(key):
+        return settings.tr(key, prefs['language'])
+
+    def translated(key, css=None):
+        widget = label(text(key), css)
+        labels.append((widget, key))
+        return widget
+
+    content.pack_start(translated('name', 'heading'), False, False, 0)
+    preview = box(False, 10, 'card')
+    preview.set_homogeneous(True)
+    preview.set_size_request(-1, 48)
+    content.pack_start(preview, False, False, 0)
+    notebook = Gtk.Notebook()
+    content.pack_start(notebook, True, True, 0)
+    pages = {}
+    for key in ('general', 'dock', 'shortcuts'):
+        page = box()
+        page.set_border_width(12)
+        tab = translated(key)
+        tab.set_line_wrap(False)
+        notebook.append_page(page, tab)
+        pages[key] = page
+
+    def widget_name(key):
+        if key in settings.WIDGETS:
+            return settings.WIDGETS[key][0 if prefs['language'] == 'ru' else 1]
+        match = re.fullmatch(r'custom/user-shortcut-(\d+)', key)
+        if match and int(match[1]) <= len(prefs['shortcuts']):
+            return prefs['shortcuts'][int(match[1]) - 1]['label']
+        return key
+
+    def refresh_preview():
+        for child in preview.get_children():
+            preview.remove(child)
+        icons = {'niri/workspaces': '  '.join(str(n) for n in range(1, prefs['workspaces'] + 1)),
+                 'custom/clock-center': '21:41', 'tray': '◇', 'network': 'ETH',
+                 'custom/language': 'EN', 'custom/bluetooth': 'BT', 'pulseaudio': '♪ 75%',
+                 'custom/power': '⏻', 'custom/recording': '●'}
+        for side in ('left', 'center', 'right'):
+            group = box(False, 8)
+            for key in prefs['groups'][side]:
+                item = label(icons.get(key, widget_name(key)))
+                item.set_tooltip_text(widget_name(key))
+                group.pack_start(item, False, False, 0)
+            preview.pack_start(group, True, True, 0)
+            group.set_halign({'left': Gtk.Align.START, 'center': Gtk.Align.CENTER,
+                              'right': Gtk.Align.END}[side])
+        preview.show_all()
+
+    general = box(css='card')
+    pages['general'].pack_start(general, False, False, 0)
+
+    def combo_row(key, choices):
+        row = box(False)
+        row.pack_start(translated(key), True, True, 0)
+        combo = Gtk.ComboBoxText()
+        for value in choices:
+            combo.append(str(value), text(str(value)) if not isinstance(value, int) else str(value))
+        combo.set_active_id(str(prefs[key]))
+        def changed(widget):
+            value = widget.get_active_id()
+            prefs[key] = int(value) if key == 'workspaces' else value
+            if key == 'language':
+                for item, translation in labels:
+                    item.set_text(text(translation))
+                root.set_title(text('name'))
+                for item, values in combos:
+                    active = item.get_active_id()
+                    item.handler_block_by_func(combo_callbacks[item])
+                    item.remove_all()
+                    for option in values:
+                        item.append(str(option), text(str(option)) if not isinstance(option, int) else str(option))
+                    item.set_active_id(active)
+                    item.handler_unblock_by_func(combo_callbacks[item])
+                refresh_widgets()
+                refresh_shortcuts()
+            refresh_preview()
+        combo_callbacks[combo] = changed
+        combo.connect('changed', changed)
+        combos.append((combo, choices))
+        row.pack_end(combo, False, False, 0)
+        general.pack_start(row, False, False, 0)
+
+    combos, combo_callbacks = [], {}
+    combo_row('language', ('ru', 'en'))
+    combo_row('workspaces', (2, 3, 4))
+    combo_row('position', ('top', 'bottom'))
+    combo_row('panel_size', ('small', 'medium', 'large'))
+    combo_row('widget_size', ('small', 'medium', 'large'))
+    date_row = box(False)
+    date_row.pack_start(translated('clock_date'), True, True, 0)
+    date_switch = Gtk.Switch(active=prefs['clock_date'])
+    date_switch.connect('notify::active', lambda widget, *_: prefs.update(clock_date=widget.get_active()))
+    date_row.pack_end(date_switch, False, False, 0)
+    general.pack_start(date_row, False, False, 0)
+    pages['general'].pack_start(translated('hint', 'muted'), False, False, 0)
+
+    dock = pages['dock']
+    controls = box(False)
+    available = Gtk.ComboBoxText()
+    destination = Gtk.ComboBoxText()
+    controls.pack_start(available, True, True, 0)
+    controls.pack_start(destination, False, False, 0)
+    dock.pack_start(controls, False, False, 0)
+    lists = {}
+    columns = box(False)
+    dock.pack_start(columns, True, True, 0)
+
+    def refresh_widgets():
+        used = {item for items in prefs['groups'].values() for item in items}
+        available.remove_all()
+        keys = list(settings.WIDGETS) + [f'custom/user-shortcut-{n}' for n in range(1, len(prefs['shortcuts']) + 1)]
+        for key in keys:
+            if key not in used:
+                available.append(key, widget_name(key))
+        available.set_active(0)
+        active_side = destination.get_active_id() or 'right'
+        destination.remove_all()
+        for side in lists:
+            destination.append(side, text(side))
+            view = lists[side]
+            for child in view.get_children():
+                view.remove(child)
+            for key in prefs['groups'][side]:
+                row = Gtk.ListBoxRow()
+                row.add(label(widget_name(key)))
+                view.add(row)
+            view.show_all()
+        destination.set_active_id(active_side)
+        refresh_preview()
+
+    def add_widget():
+        key, side = available.get_active_id(), destination.get_active_id()
+        if key and side:
+            prefs['groups'][side].append(key)
+            refresh_widgets()
+    add = button('', add_widget)
+    # Buttons use separate labels so language changes update them too.
+    add.get_child().set_text(text('new'))
+    labels.append((add.get_child(), 'new'))
+    controls.pack_end(add, False, False, 0)
+    for side in ('left', 'center', 'right'):
+        column = box(css='card')
+        columns.pack_start(column, True, True, 0)
+        column.pack_start(translated(side), False, False, 0)
+        view = Gtk.ListBox()
+        view.set_selection_mode(Gtk.SelectionMode.SINGLE)
+        lists[side] = view
+        scroll = Gtk.ScrolledWindow()
+        scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+        scroll.add(view)
+        column.pack_start(scroll, True, True, 0)
+        actions = box(False, 4)
+        column.pack_end(actions, False, False, 0)
+        def move(delta, side=side):
+            row = lists[side].get_selected_row()
+            if row is None:
+                return
+            index = row.get_index()
+            if delta == 0:
+                prefs['groups'][side].pop(index)
+            else:
+                target = max(0, min(len(prefs['groups'][side]) - 1, index + delta))
+                prefs['groups'][side].insert(target, prefs['groups'][side].pop(index))
+            refresh_widgets()
+            if delta:
+                lists[side].select_row(lists[side].get_row_at_index(target))
+        for caption, delta in (('↑', -1), ('↓', 1), ('−', 0)):
+            action = button(caption, lambda delta=delta, move=move: move(delta))
+            action.set_tooltip_text(text('remove' if delta == 0 else 'up' if delta < 0 else 'down'))
+            actions.pack_start(action, True, True, 0)
+
+    shortcut_view = Gtk.ListBox()
+    scroll = Gtk.ScrolledWindow()
+    scroll.add(shortcut_view)
+    pages['shortcuts'].pack_start(scroll, True, True, 0)
+
+    def refresh_shortcuts():
+        for child in shortcut_view.get_children():
+            shortcut_view.remove(child)
+        for item in prefs['shortcuts']:
+            row = Gtk.ListBoxRow()
+            card = box(css='card')
+            card.pack_start(label(f"{item['key']} · {item['label']}"), False, False, 0)
+            card.pack_start(label(item['command'], 'muted'), False, False, 0)
+            row.add(card)
+            shortcut_view.add(row)
+        shortcut_view.show_all()
+
+    def edit_shortcut(index=None):
+        source = prefs['shortcuts'][index] if index is not None else {}
+        dialog = Gtk.Dialog(title=text('edit' if source else 'new'), transient_for=root, modal=True)
+        dialog.get_style_context().add_class('sweet-dots')
+        dialog.add_button(text('cancel'), Gtk.ResponseType.CANCEL)
+        dialog.add_button(text('apply'), Gtk.ResponseType.OK)
+        fields = {}
+        area = dialog.get_content_area()
+        area.set_border_width(20)
+        area.set_spacing(12)
+        for key in ('label', 'key', 'command', 'icon'):
+            area.pack_start(label(text(key)), False, False, 0)
+            fields[key] = Gtk.Entry(text=source.get(key, ''))
+            fields[key].set_width_chars(48)
+            area.pack_start(fields[key], False, False, 0)
+        error = label('', 'error')
+        area.pack_start(error, False, False, 0)
+        dialog.show_all()
+        while dialog.run() == Gtk.ResponseType.OK:
+            value = {key: field.get_text().strip() for key, field in fields.items()}
+            if not value['label'] or not value['command'] or not re.fullmatch(r'[A-Za-z0-9_+\-]+', value['key']):
+                error.set_text(text('invalid'))
+                continue
+            if any(n != index and item['key'].lower() == value['key'].lower() for n, item in enumerate(prefs['shortcuts'])):
+                error.set_text(text('duplicate_key'))
+                continue
+            if index is None:
+                prefs['shortcuts'].append(value)
+                prefs['groups']['right'].append(f"custom/user-shortcut-{len(prefs['shortcuts'])}")
+            else:
+                prefs['shortcuts'][index] = value
+            break
+        dialog.destroy()
+        refresh_widgets()
+        refresh_shortcuts()
+
+    def edit_selected():
+        row = shortcut_view.get_selected_row()
+        if row:
+            edit_shortcut(row.get_index())
+
+    def delete_selected():
+        row = shortcut_view.get_selected_row()
+        if row is None:
+            return
+        number = row.get_index() + 1
+        prefs['shortcuts'].pop(number - 1)
+        for side, items in prefs['groups'].items():
+            updated = []
+            for key in items:
+                match = re.fullmatch(r'custom/user-shortcut-(\d+)', key)
+                if match:
+                    n = int(match[1])
+                    if n == number:
+                        continue
+                    key = f'custom/user-shortcut-{n - 1}' if n > number else key
+                updated.append(key)
+            prefs['groups'][side] = updated
+        refresh_widgets()
+        refresh_shortcuts()
+
+    actions = box(False)
+    pages['shortcuts'].pack_end(actions, False, False, 0)
+    for key, callback in (('new', edit_shortcut), ('edit', edit_selected), ('delete', delete_selected)):
+        action = button(text(key), callback)
+        labels.append((action.get_child(), key))
+        actions.pack_start(action, False, False, 0)
+    footer = box(False)
+    footer.pack_start(status, True, True, 0)
+    content.pack_end(footer, False, False, 0)
+
+    def save():
+        snapshot = copy.deepcopy(prefs)
+        root.set_sensitive(False)
+        status.set_text(text('saving'))
+        def done(result, error):
+            root.set_sensitive(True)
+            status.set_text(error or text('ok'))
+        async_call(lambda: settings.apply(snapshot), done)
+    apply_button = button(text('apply'), save, 'accent')
+    labels.append((apply_button.get_child(), 'apply'))
+    footer.pack_end(apply_button, False, False, 0)
+    root.set_title(text('name'))
+    refresh_widgets()
+    refresh_shortcuts()
+    root.show_all()
+    Gtk.main()
+
+
+if __name__ == '__main__':
+    run()

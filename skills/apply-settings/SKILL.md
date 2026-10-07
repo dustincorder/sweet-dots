@@ -25,3 +25,23 @@ count, dock position/size, clock format.
 - Duplicate a widget across groups (rejected) or reuse a shortcut key
   (rejected, case-insensitive).
 - Localize into one language only. Every string needs `ru`+`en`.
+
+## GTK controls and released Waybar compatibility
+
+Settings now use GTK3 (`settings_gui.py` + `desktop_ui.py`), with a layout
+preview and live palette updates from `~/.config/sweet-dots/theme.json`.
+Do not infer colors from SwayNC CSS. Preserve both languages and the
+renderer as the single config writer. `--setup` preserves unsupplied size,
+position, widgets and shortcuts.
+
+The saved `niri/workspaces` widget expands to `group/workspaces` with
+exactly 2/3/4 custom modules; `workspace-status.py` follows named Niri
+workspaces via IPC. Do not hide creation slots with transparent buttons.
+`ignored-items` is invalid; filters documented on Waybar master are not
+available in 0.15. Niri-specific autostart exclusions and `panel.py` remove
+only the current user's duplicate NM/Blueman presentation processes.
+
+Left-clicks on network/Bluetooth/audio open `applets.py` controls, never
+the clock panel. Reload with `panel.py --reload`; inspect the persistent
+Waybar log after failures. Test standalone GTK under Xvfb and layer-shell
+controls in the target user's Niri session. See `docs/PR-REVIEW.md`.

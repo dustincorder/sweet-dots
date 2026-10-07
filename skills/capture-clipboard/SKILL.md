@@ -1,14 +1,19 @@
 # Skill: capture-clipboard
 
 Triggers: screenshot, screen recording, clipboard history, annotation,
-satty, wf-recorder, cliphist.
+swappy, wf-recorder, cliphist.
 
 ## Screenshot (`scripts/capture.sh region|full`)
 
-Freeze FIRST (`grim` full frame to temp), THEN annotate in satty
-(`--initial-tool crop` for region, `pointer` for full). Never select
-the region before capturing — short-lived notifications vanish.
-Output: XDG pictures dir, auto-copied via `wl-copy`.
+Freeze the focused display FIRST (`grim -o`, output from Niri IPC), THEN
+show the GTK layer-shell selector from `capture.py`. A left click without
+drag selects the full display; drag selects a region; Escape cancels.
+Crop the frozen pixbuf with logical-to-pixel scaling, then edit in Swappy
+with the toolbar visible. Never re-capture after selection.
+`Shift+Print` skips selection. Ctrl+S saves, Ctrl+C copies; after editor
+exit an explicitly saved file is copied with `wl-copy --type image/png`.
+Closing without saving leaves no output. Temporary frames are cleaned.
+
 
 ## Recording (`scripts/record-toggle.sh [audio|silent] [region|full]`)
 

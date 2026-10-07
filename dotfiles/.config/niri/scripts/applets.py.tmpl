@@ -1,0 +1,308 @@
+#!/usr/bin/env python3
+"""Independent network, Bluetooth and audio layer-shell controls."""
+import fcntl
+import json
+import os
+from pathlib import Path
+import signal
+import subprocess
+import sys
+import time
+
+from desktop_ui import Gdk, GLib, Gtk, async_call, box, button, command, label, style
+from i18n import tr
+import settings
+
+
+def nm_fields(line):
+    fields, value, escaped = [], '', False
+    for char in line:
+        if escaped:
+            value += char
+            escaped = False
+        elif char == '\\':
+            escaped = True
+        elif char == ':':
+            fields.append(value)
+            value = ''
+        else:
+            value += char
+    return fields + [value]
+
+
+def read_state(kind):
+    if kind == 'network':
+        devices = [nm_fields(line) for line in command(['nmcli', '-t', '-f', 'DEVICE,TYPE,STATE,CONNECTION', 'device']).splitlines()]
+        wifi = command(['nmcli', 'radio', 'wifi']) == 'enabled'
+        networks = ([nm_fields(line) for line in command(['nmcli', '-t', '-f', 'IN-USE,SSID,BSSID,SIGNAL,SECURITY', 'device', 'wifi', 'list', '--rescan', 'no']).splitlines()]
+                    if any(device[1] == 'wifi' for device in devices) else [])
+        profiles = [nm_fields(line) for line in command(['nmcli', '-t', '-f', 'NAME,UUID,TYPE', 'connection', 'show']).splitlines()]
+        return devices, wifi, networks, profiles
+    if kind == 'bluetooth':
+        controller = command(['bluetoothctl', 'show'])
+        devices = []
+        for line in command(['bluetoothctl', 'devices']).splitlines():
+            fields = line.split(' ', 2)
+            if len(fields) == 3 and fields[0] == 'Device':
+                info = command(['bluetoothctl', 'info', fields[1]])
+                devices.append((fields[1], fields[2], 'Connected: yes' in info, 'Paired: yes' in info))
+        return 'Powered: yes' in controller, devices
+    sinks = json.loads(command(['pactl', '-f', 'json', 'list', 'sinks']))
+    default = command(['pactl', 'get-default-sink'])
+    volume = command(['wpctl', 'get-volume', '@DEFAULT_AUDIO_SINK@']).split()
+    try:
+        mic_muted = '[MUTED]' in command(['wpctl', 'get-volume', '@DEFAULT_AUDIO_SOURCE@'])
+    except RuntimeError:
+        mic_muted = None
+    return sinks, default, float(volume[1]) * 100, '[MUTED]' in volume, mic_muted
+
+
+def toggle_lock(kind):
+    runtime = os.environ.get('XDG_RUNTIME_DIR')
+    if not runtime:
+        raise RuntimeError('XDG_RUNTIME_DIR is required')
+    lock = (Path(runtime) / 'sweet-dots-applet.lock').open('a+')
+    try:
+        fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        return lock if kind != '--close' else None
+    except BlockingIOError:
+        lock.seek(0)
+        state = lock.read().split()
+        if len(state) != 2:
+            return None
+        pid, previous = int(state[0]), state[1]
+        try:
+            # Never signal a reused PID belonging to another process.
+            argv = Path(f'/proc/{pid}/cmdline').read_bytes().split(b'\0')
+            if str(Path(__file__).resolve()).encode() not in argv:
+                return None
+            os.kill(pid, signal.SIGUSR1)
+        except (OSError, ValueError):
+            return None
+        if kind in ('--close', previous):
+            return None
+        for _ in range(20):
+            time.sleep(0.05)
+            try:
+                fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                return lock
+            except BlockingIOError:
+                pass
+        return None
+
+
+def run(kind):
+    lock = toggle_lock(kind)
+    if lock is None:
+        return
+    lock.seek(0)
+    lock.truncate()
+    lock.write(f'{os.getpid()} {kind}')
+    lock.flush()
+    import gi
+    gi.require_version('GtkLayerShell', '0.1')
+    from gi.repository import GtkLayerShell as Layer
+    root = Gtk.Window()
+    root.get_style_context().add_class('sweet-dots')
+    root.get_style_context().add_class('sweet-popup')
+    root.set_app_paintable(True)
+    visual = root.get_screen().get_rgba_visual()
+    if visual:
+        root.set_visual(visual)
+    root.set_default_size(380, -1)
+    root.set_decorated(False)
+    root.connect('destroy', Gtk.main_quit)
+    root.connect('key-press-event', lambda widget, event: widget.destroy() if event.keyval == Gdk.KEY_Escape else False)
+    def focus_out(widget, *_):
+        def check():
+            if any(window.is_active() and window.get_transient_for() == root for window in Gtk.Window.list_toplevels()):
+                return False
+            if not root.is_active():
+                root.destroy()
+            return False
+        GLib.timeout_add(150, check)
+        return False
+    root.connect('focus-out-event', focus_out)
+    Layer.init_for_window(root)
+    Layer.set_namespace(root, 'sweet-dots-controls')
+    Layer.set_layer(root, Layer.Layer.OVERLAY)
+    Layer.set_exclusive_zone(root, -1)
+    Layer.set_keyboard_mode(root, Layer.KeyboardMode.ON_DEMAND)
+    prefs = settings.read_settings()
+    edge = Layer.Edge.TOP if prefs['position'] == 'top' else Layer.Edge.BOTTOM
+    Layer.set_anchor(root, edge, True)
+    Layer.set_anchor(root, Layer.Edge.RIGHT, True)
+    Layer.set_margin(root, edge, {'small': 32, 'medium': 40, 'large': 48}[prefs['panel_size']] + 11)
+    Layer.set_margin(root, Layer.Edge.RIGHT, 10)
+    style()
+    content = box(css='card')
+    root.add(content)
+    header = box(False)
+    header.pack_start(label(tr(kind), 'heading'), True, True, 0)
+    header.pack_end(button('×', root.destroy), False, False, 0)
+    content.pack_start(header, False, False, 0)
+    body = box()
+    scroll = Gtk.ScrolledWindow()
+    scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+    scroll.set_propagate_natural_height(True)
+    scroll.set_max_content_height(440)
+    scroll.add(body)
+    content.pack_start(scroll, True, True, 0)
+    status = label(tr('loading'), 'muted')
+    content.pack_start(status, False, False, 0)
+    busy = False
+    alive = True
+
+    def destroyed(*_):
+        nonlocal alive
+        alive = False
+    root.connect('destroy', destroyed)
+
+    def operation(argv, timeout=20):
+        nonlocal busy
+        if busy:
+            return
+        busy = True
+        body.set_sensitive(False)
+        status.set_text(tr('loading'))
+        def done(result, error):
+            nonlocal busy
+            if not alive:
+                return
+            busy = False
+            body.set_sensitive(True)
+            if error:
+                status.set_text(error)
+            else:
+                refresh()
+        async_call(lambda: command(argv, timeout), done)
+
+    def toggle(caption, active, argv):
+        row = box(False)
+        row.pack_start(label(caption), True, True, 0)
+        switch = Gtk.Switch(active=active)
+        switch.connect('notify::active', lambda *_: operation(argv))
+        row.pack_end(switch, False, False, 0)
+        body.pack_start(row, False, False, 0)
+
+    def action(caption, argv, timeout=20):
+        body.pack_start(button(caption, lambda: operation(argv, timeout)), False, False, 0)
+
+    def wifi_connect(bssid, ssid, secure):
+        argv = ['nmcli', '--wait', '15', 'device', 'wifi', 'connect', bssid]
+        if secure:
+            # Saved credentials can be reused by leaving the field empty.
+            dialog = Gtk.Dialog(title=ssid, transient_for=root, modal=True)
+            dialog.get_style_context().add_class('sweet-dots')
+            dialog.add_button(tr('cancel'), Gtk.ResponseType.CANCEL)
+            dialog.add_button(tr('connect'), Gtk.ResponseType.OK)
+            password = Gtk.Entry(visibility=False)
+            password.set_placeholder_text(tr('password_saved'))
+            password.set_margin_start(16)
+            password.set_margin_end(16)
+            password.set_margin_top(16)
+            password.set_margin_bottom(16)
+            dialog.get_content_area().add(password)
+            dialog.show_all()
+            response = dialog.run()
+            secret = password.get_text()
+            dialog.destroy()
+            if response != Gtk.ResponseType.OK:
+                return
+            if secret:
+                argv += ['password', secret]
+        operation(argv)
+
+    def render(state):
+        for child in body.get_children():
+            body.remove(child)
+        if kind == 'network':
+            devices, wifi, networks, profiles = state
+            if any(device[1] == 'wifi' for device in devices):
+                toggle('Wi-Fi', wifi, ['nmcli', 'radio', 'wifi', 'off' if wifi else 'on'])
+            for device, device_type, device_state, connection in devices:
+                if device_type in ('ethernet', 'wifi'):
+                    body.pack_start(label(f'{device} · {connection if device_state == "connected" else tr("disconnected")}', 'muted'), False, False, 0)
+                    if device_state == 'connected':
+                        action(tr('disconnect'), ['nmcli', 'device', 'disconnect', device])
+            for name, uuid, profile_type in profiles:
+                if profile_type == '802-3-ethernet':
+                    action(f'󰈀 {name}', ['nmcli', '--wait', '15', 'connection', 'up', 'uuid', uuid])
+            seen = set()
+            for in_use, ssid, bssid, strength, security in networks:
+                if not ssid or ssid in seen:
+                    continue
+                seen.add(ssid)
+                caption = f'{"● " if in_use == "*" else ""}{ssid} · {strength}%'
+                body.pack_start(button(caption, lambda bssid=bssid, ssid=ssid, secure=security not in ('', '--'): wifi_connect(bssid, ssid, secure)), False, False, 0)
+            action(tr('scan'), ['nmcli', 'device', 'wifi', 'rescan'])
+        elif kind == 'bluetooth':
+            powered, devices = state
+            toggle('Bluetooth', powered, ['bluetoothctl', 'power', 'off' if powered else 'on'])
+            for address, name, connected, paired in devices:
+                card = box()
+                card.pack_start(label(f'{name} · {tr("connected") if connected else tr("disconnected")}'), False, False, 0)
+                card.pack_start(button(tr('disconnect') if connected else tr('connect'),
+                                       lambda address=address, connected=connected, paired=paired: operation(
+                                           ['bluetoothctl', 'disconnect' if connected else 'connect' if paired else 'pair', address], 30)), False, False, 0)
+                body.pack_start(card, False, False, 0)
+            action(tr('scan'), ['bluetoothctl', '--timeout', '5', 'scan', 'on'], 10)
+        else:
+            sinks, default, volume, muted, mic_muted = state
+            toggle(tr('sound'), not muted, ['wpctl', 'set-mute', '@DEFAULT_AUDIO_SINK@', 'toggle'])
+            slider = Gtk.Scale.new_with_range(Gtk.Orientation.HORIZONTAL, 0, 100, 1)
+            slider.set_value(min(100, volume))
+            slider.set_digits(0)
+            pending = [None]
+            def changed(widget):
+                if pending[0]:
+                    GLib.source_remove(pending[0])
+                def commit():
+                    pending[0] = None
+                    if alive:
+                        operation(['wpctl', 'set-volume', '@DEFAULT_AUDIO_SINK@', f'{widget.get_value() / 100:.2f}'])
+                    return False
+                pending[0] = GLib.timeout_add(180, commit)
+            slider.connect('value-changed', changed)
+            body.pack_start(slider, False, False, 0)
+            if mic_muted is not None:
+                toggle(tr('microphone'), not mic_muted, ['wpctl', 'set-mute', '@DEFAULT_AUDIO_SOURCE@', 'toggle'])
+            body.pack_start(label(tr('output_device'), 'muted'), False, False, 0)
+            for sink in sinks:
+                name = sink['name']
+                action(('● ' if name == default else '') + sink.get('description', name), ['pactl', 'set-default-sink', name])
+        body.show_all()
+
+    def refresh():
+        nonlocal busy
+        if busy or not alive:
+            return False
+        busy = True
+        def done(state, error):
+            nonlocal busy
+            if not alive:
+                return
+            busy = False
+            status.set_text(error or '')
+            if not error:
+                render(state)
+        async_call(lambda: read_state(kind), done)
+        return True
+
+    os.environ['LC_ALL'] = 'C'
+    signal.signal(signal.SIGUSR1, lambda *_: GLib.idle_add(root.destroy))
+    subprocess.run(['swaync-client', '--close-panel'], check=False, stdout=subprocess.DEVNULL,
+                   stderr=subprocess.DEVNULL)
+    root.show_all()
+    refresh()
+    Gtk.main()
+    lock.close()
+
+
+if __name__ == '__main__':
+    if len(sys.argv) != 2 or sys.argv[1] not in ('network', 'bluetooth', 'audio', '--close'):
+        raise SystemExit('Usage: applets.py network|bluetooth|audio|--close')
+    if sys.argv[1] == '--close':
+        toggle_lock('--close')
+    else:
+        run(sys.argv[1])
