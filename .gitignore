@@ -1,0 +1,8 @@
+# Local wallpapers and previews are user-provided; do not commit them by accident.
+.DS_Store
+Thumbs.db
+*.swp
+*.bak
+wallpapers/*
+!wallpapers/README.md
+screenshots/*.png

@@ -1,0 +1,42 @@
+layout {
+    gaps 9
+    center-focused-column "never"
+    preset-column-widths { proportion 0.5; proportion 1.0; }
+    default-column-width { proportion 1.0; }
+    focus-ring {
+        width 2
+        active-color "{{colors.primary.dark.hex}}"
+        inactive-color "{{colors.outline_variant.dark.hex}}"
+    }
+    shadow { on; softness 24; spread 2; offset x=0 y=5; color "#02070bd9"; }
+}
+window-rule { geometry-corner-radius 12; clip-to-geometry true; }
+window-rule {
+    match app-id=r#"^(rofi|pavucontrol|nm-connection-editor|blueman-manager)$"#
+    open-floating true
+}
+window-rule {
+    match app-id=r#"^(Alacritty|kitty|rofi)$"#
+    background-effect { blur true; xray false; }
+}
+window-rule {
+    match is-floating=true
+    background-effect { blur true; xray false; }
+}
+window-rule {
+    match app-id=r#"^satty$"#
+    open-floating true
+}
+window-rule {
+    match app-id=r#"^firefox$"# title=r#"^Picture-in-Picture$"#
+    open-floating true
+}
+animations {
+    workspace-switch { spring damping-ratio=0.92 stiffness=620 epsilon=0.0001; }
+    window-open { duration-ms 240; curve "ease-out-cubic"; }
+    window-close { duration-ms 190; curve "ease-out-quad"; }
+    horizontal-view-movement { spring damping-ratio=0.9 stiffness=620 epsilon=0.0001; }
+    window-movement { spring damping-ratio=0.9 stiffness=650 epsilon=0.0001; }
+    window-resize { spring damping-ratio=0.9 stiffness=650 epsilon=0.0001; }
+    overview-open-close { spring damping-ratio=0.88 stiffness=620 epsilon=0.0001; }
+}

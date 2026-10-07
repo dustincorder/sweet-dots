@@ -1,0 +1,26 @@
+{
+  "$schema": "https://github.com/fastfetch-cli/fastfetch/raw/master/doc/json_schema.json",
+  "logo": {
+    "type": "builtin",
+    "source": "arch",
+    "padding": { "right": 2 },
+    "color": { "1": "#86c8d4", "2": "#b7a9d5" }
+  },
+  "display": { "separator": "  " },
+  "modules": [
+    { "type": "title", "format": "{user-name}@{host-name}" },
+    { "type": "separator", "string": "────────────────────" },
+    { "type": "os", "key": "󰣇 system", "keyColor": "cyan" },
+    { "type": "kernel", "key": "󰌢 kernel", "keyColor": "cyan" },
+    { "type": "uptime", "key": "󰥔 uptime", "keyColor": "cyan" },
+    { "type": "packages", "key": "󰏖 packages", "keyColor": "cyan" },
+    { "type": "de", "key": "󰇄 session", "keyColor": "cyan" },
+    { "type": "terminal", "key": "󰆍 terminal", "keyColor": "cyan" },
+    { "type": "shell", "key": "󰞷 shell", "keyColor": "cyan" },
+    { "type": "cpu", "key": "󰍛 cpu", "keyColor": "cyan" },
+    { "type": "gpu", "key": "󰢮 graphics", "keyColor": "cyan" },
+    { "type": "memory", "key": "󰘚 memory", "keyColor": "cyan" },
+    { "type": "disk", "key": "󰋊 disk", "keyColor": "cyan" },
+    { "type": "colors", "paddingLeft": 2 }
+  ]
+}

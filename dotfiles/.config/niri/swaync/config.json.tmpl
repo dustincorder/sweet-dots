@@ -1,0 +1,78 @@
+{
+  "$schema": "/etc/xdg/swaync/configSchema.json",
+  "positionX": "right",
+  "positionY": "top",
+  "control-center-positionX": "center",
+  "control-center-positionY": "top",
+  "layer": "overlay",
+  "control-center-layer": "overlay",
+  "control-center-width": 420,
+  "control-center-height": 660,
+  "control-center-margin-top": 54,
+  "control-center-exclusive-zone": false,
+  "notification-window-width": 350,
+  "timeout": 6,
+  "timeout-low": 3,
+  "timeout-critical": 0,
+  "keyboard-shortcuts": true,
+  "image-visibility": "when-available",
+  "transition-time": 340,
+  "hide-on-clear": true,
+  "hide-on-action": true,
+  "relative-timestamps": true,
+  "text-empty": "Новых уведомлений нет",
+  "widgets": [
+    "buttons-grid",
+    "volume",
+    "mpris",
+    "dnd",
+    "title",
+    "notifications"
+  ],
+  "widget-config": {
+    "title": {
+      "text": "Уведомления",
+      "clear-all-button": true,
+      "button-text": "Очистить"
+    },
+    "dnd": {
+      "text": "Не беспокоить"
+    },
+    "volume": {
+      "label": "󰕾",
+      "show-per-app": true
+    },
+    "mpris": {
+      "show-album-art": "always"
+    },
+    "buttons-grid": {
+      "buttons-per-row": 2,
+      "actions": [
+        {
+          "label": "󰖩  Wi-Fi",
+          "type": "toggle",
+          "active": true,
+          "command": "sh -c 'if [ \"$SWAYNC_TOGGLE_STATE\" = true ]; then nmcli radio wifi on; else nmcli radio wifi off; fi'",
+          "update-command": "sh -c 'test \"$(nmcli radio wifi)\" = enabled && echo true || echo false'"
+        },
+        {
+          "label": "󰂯  Bluetooth",
+          "type": "toggle",
+          "active": true,
+          "command": "sh -c 'if [ \"$SWAYNC_TOGGLE_STATE\" = true ]; then bluetoothctl power on; else bluetoothctl power off; fi'",
+          "update-command": "sh -c 'bluetoothctl show | grep -q \"Powered: yes\" && echo true || echo false'"
+        },
+        {
+          "label": "󰛳  Сеть",
+          "type": "normal",
+          "command": "nm-connection-editor"
+        },
+        {
+          "label": "󰕾  Устройства",
+          "type": "normal",
+          "command": "blueman-manager"
+        }
+      ]
+    }
+  }
+}

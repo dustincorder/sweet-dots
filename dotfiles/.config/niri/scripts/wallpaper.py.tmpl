@@ -1,0 +1,68 @@
+#!/usr/bin/env python3
+from pathlib import Path
+import subprocess
+import sys
+
+HOME = Path.home()
+WALLPAPERS = HOME / '.local/share/niri/wallpapers'
+CURRENT = WALLPAPERS / 'current.jpg'
+THEME = HOME / '.config/matugen/config.toml'
+ROFI_THEME = HOME / '.config/rofi/themes/niri.rasi'
+SUPPORTED = {'.png', '.jpg', '.jpeg', '.webp', '.avif'}
+
+
+def available_wallpapers():
+    WALLPAPERS.mkdir(parents=True, exist_ok=True)
+    images = [p for p in WALLPAPERS.iterdir()
+              if p.is_file() and p.suffix.lower() in SUPPORTED
+              and p.stem != 'current' and not p.stem.endswith('-thumb')]
+    return [(p.stem.replace('_', ' ').replace('-', ' · '), p)
+            for p in sorted(images, key=lambda path: path.name.casefold())]
+
+
+CHOICES = available_wallpapers()
+
+
+def select_wallpaper():
+    rows = []
+    for label, image in CHOICES:
+        thumb = WALLPAPERS / (image.stem + '-thumb.png')
+        if not thumb.exists():
+            subprocess.run(['magick', str(image), '-resize', '180x100^', '-gravity', 'center',
+                            '-extent', '180x100', str(thumb)], check=False)
+        rows.append(f'{label}\0icon\x1f{thumb}')
+    result = subprocess.run([
+        'rofi', '-dmenu', '-i', '-show-icons', '-p', 'Обои', '-theme', str(ROFI_THEME),
+        '-no-lazy-grab', '-kb-cancel', 'Escape,Control+g',
+        '-kb-accept-entry', 'Return,KP_Enter',
+    ], input='\n'.join(rows), text=True, capture_output=True)
+    if result.returncode != 0 or not result.stdout.strip():
+        return None
+    selected = result.stdout.split('\0', 1)[0].strip()
+    return next((image for label, image in CHOICES if label == selected), None)
+
+
+if '--apply-current' in sys.argv:
+    image = CURRENT.resolve() if CURRENT.exists() else (CHOICES[0][1] if CHOICES else None)
+else:
+    image = select_wallpaper()
+    if image is None:
+        raise SystemExit(0)
+
+if not image.is_file():
+    raise SystemExit(f'Файл обоев не найден: {image}')
+
+WALLPAPERS.mkdir(parents=True, exist_ok=True)
+CURRENT.unlink(missing_ok=True)
+CURRENT.symlink_to(image)
+theme_result = subprocess.run([
+    'matugen', 'image', str(image), '--config', str(THEME), '--mode', 'dark',
+    '--type', 'scheme-content', '--source-color-index', '1', '--quiet',
+    '--continue-on-error',
+], check=False, capture_output=True, text=True)
+if theme_result.returncode != 0:
+    detail = (theme_result.stderr or theme_result.stdout or 'неизвестная ошибка').strip()[-350:]
+    subprocess.run(['notify-send', 'Matugen: тема обновилась с ошибкой', detail], check=False)
+subprocess.run(['niri', 'msg', 'action', 'load-config-file'], check=False)
+subprocess.run(['swaync-client', '--reload-css'], check=False)
+subprocess.run(['pkill', '-USR2', '-x', 'waybar'], check=False)

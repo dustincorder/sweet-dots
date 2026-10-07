@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+theme="@HOME@/.config/rofi/themes/niri.rasi"
+selection="$(cliphist list | rofi -dmenu -i -p 'Буфер обмена' -theme "$theme")" || exit 0
+[ -n "$selection" ] || exit 0
+printf '%s' "$selection" | cliphist decode | wl-copy

@@ -1,0 +1,8 @@
+include "common.kdl"
+
+spawn-at-startup "/usr/lib/hyprpolkitagent/hyprpolkitagent"
+spawn-at-startup "hypridle" "--config" "@HOME@/.config/niri/hypridle.conf"
+
+binds {
+    Mod+L { spawn "hyprlock" "--config" "@HOME@/.config/niri/hyprlock.conf"; }
+}

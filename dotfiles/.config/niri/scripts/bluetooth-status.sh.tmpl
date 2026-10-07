@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+if bluetoothctl show 2>/dev/null | grep -q 'Powered: yes'; then
+    printf '{"text":"󰂯","tooltip":"Bluetooth включён · нажми, чтобы открыть устройства"}\n'
+else
+    printf '{"text":"󰂲","tooltip":"Bluetooth выключен · нажми, чтобы открыть устройства"}\n'
+fi

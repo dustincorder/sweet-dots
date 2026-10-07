@@ -1,0 +1,94 @@
+{
+  "layer": "top",
+  "position": "top",
+  "height": 40,
+  "margin-top": 7,
+  "margin-left": 10,
+  "margin-right": 10,
+  "spacing": 5,
+  "exclusive": true,
+  "passthrough": false,
+  "gtk-layer-shell": true,
+  "modules-left": ["custom/launcher", "niri/workspaces"],
+  "modules-center": ["custom/date-ru"],
+  "modules-right": ["tray", "network", "custom/bluetooth", "pulseaudio", "cpu", "memory", "custom/wallpaper", "custom/language"],
+
+  "custom/launcher": {
+    "format": "󰍜",
+    "tooltip": true,
+    "tooltip-format": "Приложения · Mod+D",
+    "on-click": "rofi -show drun -theme @HOME@/.config/rofi/themes/niri.rasi -no-lazy-grab -kb-cancel Escape,Control+g -kb-accept-entry Return,KP_Enter"
+  },
+  "niri/workspaces": {
+    "format": "{name}",
+    "persistent-workspaces": {"*": ["1", "2", "3", "4"]},
+    "on-click": "activate",
+    "on-scroll-up": "focus-workspace-up",
+    "on-scroll-down": "focus-workspace-down"
+  },
+  "niri/window": {
+    "format": "{title}",
+    "max-length": 40,
+    "separate-outputs": true
+  },
+  "cpu": {
+    "interval": 5,
+    "format": "󰘚 {usage}%",
+    "tooltip": true,
+    "on-click": "@HOME@/.config/niri/scripts/resource-overlay.sh"
+  },
+  "memory": {
+    "interval": 10,
+    "format": "󰍛 {percentage}%",
+    "tooltip": true,
+    "on-click": "@HOME@/.config/niri/scripts/resource-overlay.sh"
+  },
+  "network": {
+    "interval": 5,
+    "format-wifi": "󰤨 {signalStrength}%",
+    "format-ethernet": "󰈀",
+    "format-disconnected": "󰤭",
+    "tooltip-format": "{ifname}: {ipaddr}",
+    "on-click": "@HOME@/.config/niri/scripts/toggle-notifications.sh",
+    "on-click-right": "nm-connection-editor"
+  },
+  "custom/bluetooth": {
+    "exec": "@HOME@/.config/niri/scripts/bluetooth-status.sh",
+    "return-type": "json",
+    "interval": 8,
+    "on-click": "@HOME@/.config/niri/scripts/toggle-notifications.sh",
+    "on-click-right": "blueman-manager"
+  },
+  "pulseaudio": {
+    "format": "{icon} {volume}%",
+    "format-muted": "󰝟",
+    "format-icons": {"default": ["󰕿", "󰖀", "󰕾"]},
+    "on-click": "@HOME@/.config/niri/scripts/toggle-notifications.sh",
+    "on-click-right": "pavucontrol",
+    "on-click-right": "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle",
+    "scroll-step": 5
+  },
+  "tray": {
+    "icon-size": 16,
+    "spacing": 8,
+    "show-passive-items": true
+  },
+  "custom/wallpaper": {
+    "format": "󰸉",
+    "tooltip": true,
+    "tooltip-format": "Обои · Mod+Shift+W",
+    "on-click": "python3 @HOME@/.config/niri/scripts/wallpaper.py"
+  },
+  "custom/language": {
+    "exec": "@HOME@/.config/niri/scripts/keyboard-layout.sh",
+    "return-type": "json",
+    "interval": 1,
+    "on-click": "niri msg action switch-layout next"
+  },
+  "custom/date-ru": {
+    "exec": "python3 @HOME@/.config/niri/scripts/date-ru.py",
+    "interval": 30,
+    "tooltip": false,
+    "on-click": "@HOME@/.config/niri/scripts/toggle-notifications.sh"
+  }
+}

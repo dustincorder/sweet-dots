@@ -1,0 +1,53 @@
+* { font-family: "SF Pro Display", "Inter", "Noto Sans", "Symbols Nerd Font"; font-size: 13px; }
+button { font-family: "SF Pro Display", "Symbols Nerd Font", "Noto Sans"; }
+.control-center {
+  background: #101820;
+  border: 1px solid #3b3d43;
+  border-radius: 22px;
+  color: #f4ede2;
+  padding: 14px;
+}
+.control-center-list { background: transparent; }
+.widget-title { color: #f4ede2; font-size: 16px; font-weight: 600; margin: 4px 2px 10px; }
+.widget-title > button {
+  background: #232426;
+  border: 1px solid #3b3d43;
+  border-radius: 10px;
+  color: #fff3d6;
+  padding: 5px 10px;
+}
+.widget-dnd { background: #26231d; border-radius: 12px; margin: 5px 0; padding: 10px; }
+.widget-volume, .widget-mpris, .widget-buttons-grid {
+  background: #26231d;
+  border: 1px solid #3b3d43;
+  border-radius: 15px;
+  margin: 5px 0;
+  padding: 10px;
+}
+.widget-buttons-grid > flowbox > flowboxchild > button {
+  background: #232426;
+  border: 1px solid #3b3d43;
+  border-radius: 12px;
+  color: #f4ede2;
+  min-height: 42px;
+  transition: background 220ms ease, border-color 220ms ease;
+}
+.widget-buttons-grid > flowbox > flowboxchild > button:hover,
+.widget-title > button:hover { background: #303136; }
+.widget-buttons-grid > flowbox > flowboxchild > button.toggle:checked {
+  background: #3a3d44;
+  color: #3b3000;
+}
+.notification-row { outline: none; }
+.notification {
+  background: #17232b;
+  border: 1px solid #3b3d43;
+  border-radius: 15px;
+  color: #f4ede2;
+  margin: 5px 0;
+  padding: 10px;
+}
+.notification-content { padding: 2px; }
+.summary { color: #f4ede2; font-weight: 600; }
+.body { color: #cec6b2; }
+.close-button { background: #101820; border-radius: 8px; color: #f4ede2; }

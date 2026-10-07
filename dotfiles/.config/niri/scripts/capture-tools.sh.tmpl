@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+theme="@HOME@/.config/rofi/themes/niri.rasi"
+choice="$(printf '%s\n' \
+    'Снимок области · аннотации' \
+    'Снимок всего экрана · аннотации' \
+    'Запись области · со звуком' \
+    'Запись области · без звука' \
+    'Запись всего экрана · со звуком' \
+    'Запись всего экрана · без звука' \
+    | rofi -dmenu -i -p 'Снимок и запись' -theme "$theme")" || exit 0
+
+case "$choice" in
+    'Снимок области · аннотации') exec @HOME@/.config/niri/scripts/capture.sh region ;;
+    'Снимок всего экрана · аннотации') exec @HOME@/.config/niri/scripts/capture.sh full ;;
+    'Запись области · со звуком') exec @HOME@/.config/niri/scripts/record-toggle.sh audio region ;;
+    'Запись области · без звука') exec @HOME@/.config/niri/scripts/record-toggle.sh silent region ;;
+    'Запись всего экрана · со звуком') exec @HOME@/.config/niri/scripts/record-toggle.sh audio full ;;
+    'Запись всего экрана · без звука') exec @HOME@/.config/niri/scripts/record-toggle.sh silent full ;;
+esac

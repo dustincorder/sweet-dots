@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+pictures_dir="$(xdg-user-dir PICTURES)"
+screenshot_dir="$pictures_dir/Screenshots"
+mkdir -p "$screenshot_dir"
+file="$screenshot_dir/Screenshot-$(date +%F_%H-%M-%S).png"
+raw_file="$(mktemp "$screenshot_dir/.capture-XXXXXX.png")"
+trap 'rm -f "$raw_file"' EXIT
+mode="${1:-region}"
+
+if [ "$mode" = "region" ]; then
+    # Freeze the whole screen before showing any selection UI. This preserves
+    # short-lived notifications and menus; crop/annotate the captured frame in Satty.
+    grim "$raw_file"
+    satty --filename "$raw_file" --output-filename "$file" --copy-command wl-copy --initial-tool crop
+elif [ "$mode" = "full" ]; then
+    grim "$raw_file"
+    satty --filename "$raw_file" --output-filename "$file" --copy-command wl-copy --initial-tool pointer
+else
+    notify-send "Снимок экрана" "Неизвестный режим захвата."
+    exit 2
+fi

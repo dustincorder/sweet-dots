@@ -1,0 +1,7 @@
+general {
+    lock_cmd = pidof hyprlock || hyprlock --config @HOME@/.config/niri/hyprlock.conf
+}
+listener {
+    timeout = 1800
+    on-timeout = hyprlock --config @HOME@/.config/niri/hyprlock.conf
+}

@@ -1,0 +1,7 @@
+#!/usr/bin/env python3
+from datetime import datetime
+
+now = datetime.now().astimezone()
+weekdays = ("понедельник", "вторник", "среда", "четверг", "пятница", "суббота", "воскресенье")
+months = ("января", "февраля", "марта", "апреля", "мая", "июня", "июля", "августа", "сентября", "октября", "ноября", "декабря")
+print(f"{weekdays[now.weekday()]}, {now.day:02d} {months[now.month - 1]} · {now:%H:%M}")

@@ -1,0 +1,36 @@
+#!/usr/bin/env python3
+import time
+from pathlib import Path
+import subprocess
+
+
+def cpu_snapshot():
+    fields = Path('/proc/stat').read_text().splitlines()[0].split()[1:]
+    values = [int(value) for value in fields]
+    idle = values[3] + (values[4] if len(values) > 4 else 0)
+    return sum(values), idle
+
+
+total_a, idle_a = cpu_snapshot()
+time.sleep(0.25)
+total_b, idle_b = cpu_snapshot()
+total_delta = max(1, total_b - total_a)
+cpu = round(100 * (total_delta - (idle_b - idle_a)) / total_delta)
+
+memory = {}
+for line in Path('/proc/meminfo').read_text().splitlines():
+    key, value = line.split(':', 1)
+    memory[key] = int(value.split()[0])
+total = memory['MemTotal']
+available = memory.get('MemAvailable', memory.get('MemFree', 0))
+used = total - available
+ram = round(100 * used / total)
+used_gib = used / 1024 / 1024
+total_gib = total / 1024 / 1024
+
+subprocess.run([
+    'notify-send', '--app-name=Система', '--icon=utilities-system-monitor',
+    '--urgency=low', '--expire-time=5500', '--replace-id=7214',
+    'Состояние системы',
+    f'Процессор   {cpu}%\nПамять       {ram}% · {used_gib:.1f} из {total_gib:.1f} ГиБ',
+], check=False)

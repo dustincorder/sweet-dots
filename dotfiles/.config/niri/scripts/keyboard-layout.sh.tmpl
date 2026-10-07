@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+layout=$(niri msg keyboard-layouts | sed -n 's/^[[:space:]]*\*[[:space:]]*[0-9][0-9]*[[:space:]]*//p' | head -n1)
+case "$layout" in
+    *English*|*US*) label="EN" ;;
+    *Russian*|*рус*) label="РУС" ;;
+    *) label="?" ;;
+esac
+printf '{"text":"%s","tooltip":"Раскладка: %s · Shift+Alt переключает"}\n' "$label" "$layout"

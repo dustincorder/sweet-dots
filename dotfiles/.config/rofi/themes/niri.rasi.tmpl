@@ -1,0 +1,48 @@
+configuration {
+    show-icons: true;
+    font: "Inter 12";
+    drun-display-format: "{name}";
+    display-drun: "Приложения";
+    display-run: "Команда";
+    modi: "drun,run";
+}
+* {
+    bg: #141314E5;
+    panel: #242324EA;
+    fg: #f1eded;
+    muted: #c8c5cc;
+    accent: #c8c5d2;
+    accent-soft: #6d6b77;
+    border: #6d6c71;
+    background-color: transparent;
+    text-color: @fg;
+}
+window {
+    width: 640px;
+    border: 1px;
+    border-color: @border;
+    border-radius: 20px;
+    location: center;
+    anchor: center;
+    background-color: @bg;
+    padding: 22px;
+}
+mainbox { children: [ inputbar, listview ]; spacing: 16px; background-color: transparent; }
+inputbar {
+    background-color: @panel;
+    border: 1px;
+    border-color: @border;
+    border-radius: 13px;
+    padding: 12px 16px;
+    children: [ prompt, entry ];
+    spacing: 12px;
+}
+prompt { text-color: @accent; }
+entry { placeholder: "Найти приложение…"; placeholder-color: @muted; }
+listview { columns: 1; lines: 8; fixed-height: true; scrollbar: false; spacing: 4px; background-color: transparent; }
+element { border-radius: 11px; padding: 8px 10px; spacing: 10px; background-color: transparent; }
+element-icon { size: 28px; background-color: transparent; }
+element-text { vertical-align: 0.5; text-color: @fg; }
+element selected { background-color: @accent-soft; border: 1px; border-color: @accent; }
+element selected element-text { text-color: @fg; }
+message { padding: 10px; text-color: @muted; }

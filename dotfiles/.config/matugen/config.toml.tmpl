@@ -1,0 +1,37 @@
+[config]
+fallback_color = "#72cbd3"
+prefer = "saturation"
+contrast = 0.25
+source_color_index = 1
+
+[config.wallpaper]
+set = true
+command = "awww img --transition-type fade --transition-duration 0.45 {{ image }}"
+
+[templates.waybar]
+input_path = "@HOME@/.config/waybar/niri/style.template.css"
+output_path = "@HOME@/.config/waybar/niri/style.css"
+
+[templates.swaync]
+input_path = "@HOME@/.config/niri/swaync/style.template.css"
+output_path = "@HOME@/.config/niri/swaync/style.css"
+
+[templates.rofi]
+input_path = "@HOME@/.config/rofi/themes/niri.template.rasi"
+output_path = "@HOME@/.config/rofi/themes/niri.rasi"
+
+[templates.niri]
+input_path = "@HOME@/.config/niri/visuals.template.kdl"
+output_path = "@HOME@/.config/niri/visuals.kdl"
+
+[templates.kitty]
+input_path = "@HOME@/.config/kitty/niri.template.conf"
+output_path = "@HOME@/.config/kitty/niri.conf"
+
+[templates.kitty-base]
+input_path = "@HOME@/.config/kitty/matugen-colors.template.conf"
+output_path = "@HOME@/.config/kitty/matugen-colors.conf"
+
+[templates.alacritty]
+input_path = "@HOME@/.config/alacritty/matugen-colors.template.toml"
+output_path = "@HOME@/.config/alacritty/matugen-colors.toml"

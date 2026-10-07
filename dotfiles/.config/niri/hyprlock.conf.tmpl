@@ -1,0 +1,50 @@
+background {
+    path = @HOME@/.local/share/niri/sweet-pool-aquarium-1366x768.jpg
+    blur_passes = 1
+    blur_size = 5
+    noise = 0.02
+}
+image {
+    path = @HOME@/.face
+    size = 112
+    rounding = 56
+    border_size = 2
+    border_color = rgb(114, 203, 211)
+    position = 0, 158
+    halign = center
+    valign = center
+}
+label {
+    text = $USER
+    font_family = Inter
+    font_size = 20
+    color = rgba(235, 243, 245, 235)
+    position = 0, 78
+    halign = center
+    valign = center
+}
+label {
+    text = $TIME
+    font_family = Inter
+    font_size = 64
+    color = rgba(238, 246, 248, 245)
+    position = 0, -12
+    halign = center
+    valign = center
+}
+input-field {
+    size = 310, 50
+    position = 0, -94
+    halign = center
+    valign = center
+    outline_thickness = 2
+    dots_size = 0.28
+    dots_spacing = 0.22
+    outer_color = rgb(114, 203, 211)
+    inner_color = rgba(8, 17, 24, 225)
+    font_color = rgb(235, 243, 245)
+    fail_color = rgb(214, 119, 132)
+    check_color = rgb(130, 205, 175)
+    placeholder_text = пароль
+    rounding = 14
+}

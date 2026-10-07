@@ -1,0 +1,59 @@
+* {
+  border: none;
+  border-radius: 0;
+  font-family: "SF Pro Display", "Inter", "Noto Sans", "Symbols Nerd Font";
+  font-size: 13px;
+  min-height: 0;
+}
+window#waybar { background: transparent; color: {{colors.on_surface.dark.hex}}; }
+window#waybar > box {
+  background: rgba(18, 19, 22, 0.92);
+  border: 1px solid #3b3d43;
+  border-radius: 14px;
+  background-clip: padding-box;
+  padding: 0 7px;
+}
+#custom-launcher, #workspaces, #window, #cpu, #memory, #network,
+#custom-bluetooth, #pulseaudio, #tray, #custom-language, #custom-wallpaper,
+#custom-quick-settings, #clock { margin: 4px 2px; }
+#custom-launcher, #custom-language, #custom-wallpaper, #custom-quick-settings {
+  background: #232426;
+  border: 1px solid #3b3d43;
+  border-radius: 9px;
+  color: {{colors.primary.dark.hex}};
+  min-width: 34px;
+  padding: 0 7px;
+}
+#custom-launcher { font-size: 16px; }
+#workspaces {
+  background: {{colors.surface_container.dark.hex}};
+  border-radius: 10px;
+  padding: 2px;
+}
+#workspaces button {
+  background: transparent;
+  border-radius: 8px;
+  color: {{colors.on_surface_variant.dark.hex}};
+  min-width: 28px;
+  padding: 0 7px;
+  transition: background 220ms ease, color 220ms ease;
+}
+#workspaces button:hover { background: #303943; color: {{colors.on_surface.dark.hex}}; }
+#workspaces button.active { background: {{colors.primary_container.dark.hex}}; color: {{colors.on_primary_container.dark.hex}}; }
+#workspaces button.empty { color: {{colors.outline.dark.hex}}; }
+#workspaces button:nth-child(n+5) { min-width: 0; padding: 0; margin: 0; opacity: 0; }
+#window { color: {{colors.on_surface_variant.dark.hex}}; padding: 0 10px; }
+#cpu, #memory, #network, #custom-bluetooth, #pulseaudio, #custom-language, #clock {
+  color: {{colors.on_surface.dark.hex}};
+  padding: 0 5px;
+}
+#network, #pulseaudio { color: {{colors.primary.dark.hex}}; }
+#tray { padding: 0 4px; }
+#custom-quick-settings { background: #34363d; border-color: #3b3d43; }
+tooltip {
+  background: {{colors.surface_container_high.dark.hex}};
+  border: 1px solid #3b3d43;
+  border-radius: 9px;
+  color: {{colors.on_surface.dark.hex}};
+  padding: 7px 9px;
+}

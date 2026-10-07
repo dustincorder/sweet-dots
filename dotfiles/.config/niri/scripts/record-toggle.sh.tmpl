@@ -1,0 +1,50 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+runtime_dir="${XDG_RUNTIME_DIR:-/run/user/1000}"
+pid_file="$runtime_dir/niri-wf-recorder.pid"
+videos_dir="$(xdg-user-dir VIDEOS)"
+record_dir="$videos_dir/Recordings"
+log_file="$runtime_dir/niri-wf-recorder.log"
+mkdir -p "$record_dir"
+
+if [ -f "$pid_file" ]; then
+    recorder_pid="$(cat "$pid_file")"
+    if kill -0 "$recorder_pid" 2>/dev/null; then
+        kill -INT "$recorder_pid"
+        rm -f "$pid_file"
+        notify-send "Запись остановлена" "Видео сохранено: ${file/#$HOME/~}"
+        exit 0
+    fi
+    rm -f "$pid_file"
+fi
+
+mode="${1:-audio}"
+scope="${2:-region}"
+file="$record_dir/Recording-$(date +%F_%H-%M-%S).mp4"
+audio_arg=""
+if [ "$mode" != "silent" ]; then
+    default_sink="$(pactl get-default-sink 2>/dev/null || true)"
+    if [ -n "$default_sink" ]; then
+        audio_arg="--audio=$default_sink.monitor"
+    else
+        audio_arg="--audio"
+    fi
+fi
+
+if [ "$scope" = "region" ]; then
+    geometry="$(slurp)" || exit 0
+    wf-recorder -r 30 -f "$file" $audio_arg -g "$geometry" >> "$log_file" 2>&1 &
+else
+    wf-recorder -r 30 -f "$file" $audio_arg >> "$log_file" 2>&1 &
+fi
+
+recorder_pid=$!
+printf '%s\n' "$recorder_pid" > "$pid_file"
+sleep 0.5
+if kill -0 "$recorder_pid" 2>/dev/null; then
+    notify-send "Запись началась" "Нажми ту же кнопку ещё раз, чтобы остановить."
+else
+    rm -f "$pid_file"
+    notify-send "Не удалось начать запись" "Подробности: $log_file"
+fi

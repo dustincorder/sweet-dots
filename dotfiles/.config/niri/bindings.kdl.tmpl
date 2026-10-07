@@ -1,0 +1,71 @@
+hotkey-overlay {
+    skip-at-startup
+}
+
+binds {
+    Mod+Shift+Slash { show-hotkey-overlay; }
+    Mod+D { spawn "rofi" "-show" "drun" "-theme" "@HOME@/.config/rofi/themes/niri.rasi" "-no-lazy-grab" "-kb-cancel" "Escape,Control+g" "-kb-accept-entry" "Return,KP_Enter"; }
+    Mod+Space { spawn "rofi" "-show" "drun" "-theme" "@HOME@/.config/rofi/themes/niri.rasi" "-no-lazy-grab" "-kb-cancel" "Escape,Control+g" "-kb-accept-entry" "Return,KP_Enter"; }
+    Mod+T { spawn "kitty" "--config" "@HOME@/.config/kitty/niri.conf"; }
+    Ctrl+Alt+T { spawn "kitty" "--config" "@HOME@/.config/kitty/niri.conf"; }
+    Mod+E { spawn "thunar"; }
+    Mod+N { spawn "@HOME@/.config/niri/scripts/toggle-notifications.sh"; }
+    Mod+V { spawn "@HOME@/.config/niri/scripts/clipboard-menu.sh"; }
+    Mod+Shift+W { spawn "python3" "@HOME@/.config/niri/scripts/wallpaper.py"; }
+    Mod+Shift+Print { spawn "@HOME@/.config/niri/scripts/capture-tools.sh"; }
+
+    Mod+Q repeat=false { close-window; }
+    Mod+Left { focus-column-left-or-last; }
+    Mod+Right { focus-column-right-or-first; }
+    Mod+H { focus-column-left; }
+    Mod+L { focus-column-right; }
+    Mod+Shift+Left { move-column-left; }
+    Mod+Shift+Right { move-column-right; }
+    Mod+Up { maximize-column; }
+    Mod+Down { reset-window-height; }
+    Mod+K { focus-window-up; }
+    Mod+J { focus-window-down; }
+    Mod+Shift+K { move-window-up; }
+    Mod+Shift+J { move-window-down; }
+
+    Mod+R { switch-preset-column-width; }
+    Mod+BracketLeft { consume-or-expel-window-left; }
+    Mod+BracketRight { consume-or-expel-window-right; }
+    Mod+Comma { consume-window-into-column; }
+    Mod+Period { expel-window-from-column; }
+    Mod+F { toggle-window-floating; }
+    Mod+Shift+F { fullscreen-window; }
+    Mod+M { maximize-window-to-edges; }
+    Mod+Minus { set-column-width "-10%"; }
+    Mod+Equal { set-column-width "+10%"; }
+
+    Mod+O { toggle-overview; }
+    Mod+Tab { toggle-overview; }
+    Mod+1 { focus-workspace "1"; }
+    Mod+2 { focus-workspace "2"; }
+    Mod+3 { focus-workspace "3"; }
+    Mod+4 { focus-workspace "4"; }
+    Mod+Shift+1 { move-column-to-workspace "1"; }
+    Mod+Shift+2 { move-column-to-workspace "2"; }
+    Mod+Shift+3 { move-column-to-workspace "3"; }
+    Mod+Shift+4 { move-column-to-workspace "4"; }
+    Mod+Page_Up { focus-workspace-up; }
+    Mod+Page_Down { focus-workspace-down; }
+    Mod+WheelScrollUp cooldown-ms=150 { focus-workspace-up; }
+    Mod+WheelScrollDown cooldown-ms=150 { focus-workspace-down; }
+
+    Print { spawn "@HOME@/.config/niri/scripts/capture.sh" "region"; }
+    Shift+Print { spawn "@HOME@/.config/niri/scripts/capture.sh" "full"; }
+    Ctrl+Print { spawn "@HOME@/.config/niri/scripts/record-toggle.sh" "audio" "region"; }
+    Ctrl+Shift+Print { spawn "@HOME@/.config/niri/scripts/record-toggle.sh" "silent" "region"; }
+
+    XF86AudioRaiseVolume allow-when-locked=true { spawn-sh "wpctl set-volume @DEFAULT_AUDIO_SINK@ 0.05+ -l 1.0"; }
+    XF86AudioLowerVolume allow-when-locked=true { spawn-sh "wpctl set-volume @DEFAULT_AUDIO_SINK@ 0.05-"; }
+    XF86AudioMute allow-when-locked=true { spawn-sh "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"; }
+    XF86AudioPlay allow-when-locked=true { spawn "playerctl" "play-pause"; }
+    XF86AudioNext allow-when-locked=true { spawn "playerctl" "next"; }
+    XF86AudioPrev allow-when-locked=true { spawn "playerctl" "previous"; }
+
+    Mod+Escape allow-inhibiting=false { toggle-keyboard-shortcuts-inhibit; }
+    Mod+Shift+E { quit; }
+}
